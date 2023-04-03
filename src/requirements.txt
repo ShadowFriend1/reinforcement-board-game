@@ -1,0 +1,5 @@
+tensorflow
+tf_agents
+sklearn
+scipy
+numpy
