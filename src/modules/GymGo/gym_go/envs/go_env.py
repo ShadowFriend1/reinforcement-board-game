@@ -3,7 +3,7 @@ from enum import Enum
 import gym
 import numpy as np
 
-from gym_go import govars, rendering, gogame
+from src.modules.GymGo.gym_go import govars, rendering, gogame
 
 
 class RewardMethod(Enum):
@@ -21,13 +21,13 @@ class GoEnv(gym.Env):
     govars = govars
     gogame = gogame
 
-    def __init__(self, size, komi=0, reward_method='real'):
-        '''
+    def __init__(self, size=19, komi=0, reward_method='real'):
+        """
         @param reward_method: either 'heuristic' or 'real'
         heuristic: gives # black pieces - # white pieces.
         real: gives 0 for in-game move, 1 for winning, -1 for losing,
             0 for draw, all from black player's perspective
-        '''
+        """
         self.size = size
         self.komi = komi
         self.state_ = gogame.init_state(size)
@@ -37,26 +37,36 @@ class GoEnv(gym.Env):
         self.action_space = gym.spaces.Discrete(gogame.action_size(self.state_))
         self.done = False
 
-    def reset(self):
-        '''
+    def reset(self, **kwargs):
+        """
         Reset state, go_board, curr_player, prev_player_passed,
         done, return state
-        '''
+        """
         self.state_ = gogame.init_state(self.size)
         self.done = False
         return np.copy(self.state_)
 
     def step(self, action):
-        '''
+        """
         Assumes the correct player is making a move. Black goes first.
         return observation, reward, done, info
-        '''
+        """
         assert not self.done
-        if isinstance(action, tuple) or isinstance(action, list) or isinstance(action, np.ndarray):
-            assert 0 <= action[0] < self.size
-            assert 0 <= action[1] < self.size
-            action = self.size * action[0] + action[1]
-        elif action is None:
+
+        board_shape = self.state().shape[1:]
+
+        action2d = action // board_shape[0], action % board_shape[1]
+        try:
+            if isinstance(action, tuple) or isinstance(action, list) or isinstance(action, np.ndarray):
+                assert 0 <= action[0] < self.size
+                assert 0 <= action[1] < self.size
+                action = self.size * action[0] + action[1]
+            elif action is None:
+                action = self.size ** 2
+            elif self.state()[govars.INVD_CHNL, action2d[0], action2d[1]] != 0:
+                action = self.size ** 2
+        except IndexError:
+            print('out of bounds')
             action = self.size ** 2
 
         self.state_ = gogame.next_state(self.state_, action, canonical=False)
@@ -126,7 +136,7 @@ class GoEnv(gym.Env):
             return 0
 
     def reward(self):
-        '''
+        """
         Return reward based on reward_method.
         heuristic: black total area - white total area
         real: 0 for in-game move, 1 for winning, 0 for losing,
@@ -134,7 +144,7 @@ class GoEnv(gym.Env):
             Winning and losing based on the Area rule
             Also known as Trump Taylor Scoring
         Area rule definition: https://en.wikipedia.org/wiki/Rules_of_Go#End
-        '''
+        """
         if self.reward_method == RewardMethod.REAL:
             return self.winner()
 

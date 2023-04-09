@@ -1,7 +1,7 @@
 import numpy as np
 import pyglet
 
-from gym_go import govars, gogame
+from src.modules.GymGo.gym_go import govars, gogame
 
 
 def draw_circle(x, y, color, radius):
@@ -18,7 +18,7 @@ def draw_circle(x, y, color, radius):
 
 def draw_command_labels(batch, window_width, window_height):
     pyglet.text.Label('Pass (p) | Reset (r) | Exit (e)',
-                      font_name='Helvetica',
+                      font_name='Times New Roman',
                       font_size=11,
                       x=20, y=window_height - 20, anchor_y='top', batch=batch, multiline=True, width=window_width)
 
@@ -31,19 +31,19 @@ def draw_info(batch, window_width, window_height, upper_grid_coord, state):
     info_label = "Turn: {}\nPassed: {}\nGame: {}".format(turn_str, prev_player_passed,
                                                          "OVER" if game_ended else "ONGOING")
 
-    pyglet.text.Label(info_label, font_name='Helvetica', font_size=11, x=window_width - 20, y=window_height - 20,
+    pyglet.text.Label(info_label, font_name='Times New Roman', font_size=11, x=window_width - 20, y=window_height - 20,
                       anchor_x='right', anchor_y='top', color=(0, 0, 0, 192), batch=batch, width=window_width / 2,
                       align='right', multiline=True)
 
     # Areas
     black_area, white_area = gogame.areas(state)
-    pyglet.text.Label("{}B | {}W".format(black_area, white_area), font_name='Helvetica', font_size=16,
+    pyglet.text.Label("{}B | {}W".format(black_area, white_area), font_name='Times New Roman', font_size=16,
                       x=window_width / 2, y=upper_grid_coord + 80, anchor_x='center', color=(0, 0, 0, 192), batch=batch,
                       width=window_width, align='center')
 
 
 def draw_title(batch, window_width, window_height):
-    pyglet.text.Label("Go", font_name='Helvetica', font_size=20, bold=True, x=window_width / 2, y=window_height - 20,
+    pyglet.text.Label("Go", font_name='Times New Roman', font_size=20, bold=True, x=window_width / 2, y=window_height - 20,
                       anchor_x='center', anchor_y='top', color=(0, 0, 0, 255), batch=batch, width=window_width / 2,
                       align='center')
 
@@ -65,13 +65,13 @@ def draw_grid(batch, delta, board_size, lower_grid_coord, upper_grid_coord):
         color_list.extend([0.3, 0.3, 0.3] * 4)  # black
         # label on the left
         pyglet.text.Label(str(i),
-                          font_name='Courier', font_size=11,
+                          font_name='Times New Roman', font_size=11,
                           x=lower_grid_coord - label_offset, y=left_coord,
                           anchor_x='center', anchor_y='center',
                           color=(0, 0, 0, 255), batch=batch)
         # label on the bottom
         pyglet.text.Label(str(i),
-                          font_name='Courier', font_size=11,
+                          font_name='Times New Roman', font_size=11,
                           x=left_coord, y=lower_grid_coord - label_offset,
                           anchor_x='center', anchor_y='center',
                           color=(0, 0, 0, 255), batch=batch)
