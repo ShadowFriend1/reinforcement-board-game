@@ -64,9 +64,7 @@ def train_model(train_env, test_env, agent, replay_buffer, iterator):
     plt.plot(iterations, returns)
     plt.ylabel('Average Return')
     plt.xlabel('Iterations')
-    plt.ylim(top=250)
     plt.show()
-
 
 def build_model(env, fc_layer_params=(100,), learning_rate=1e-3):
     q_net = q_network.QNetwork(env.observation_spec(),
@@ -124,9 +122,13 @@ def collect_data(env, policy, buffer, steps):
         collect_step(env, policy, buffer)
 
 
-if __name__ == "__main__":
-    tf.config.run_functions_eagerly(True)
+def valid_move_splitter(observation):
+    mask_2d = tf.equal(observation[0][3], 0.0)
+    mask = tf.reshape(tf.tile(mask_2d, [tf.squeeze(observation).shape[0], 1]), observation.shape)
+    return observation, mask
 
+
+if __name__ == "__main__":
     # Chess = chess:chess-v0, draughts = draughts:draughts-v0, go = gym-go:go-v0
     # env_name = input("Please input environment name in format '<install_name>:<environment_name>'")
     env_name = 'gym_go:go-v0'
@@ -139,7 +141,10 @@ if __name__ == "__main__":
                                                                    batch_size=train_env.batch_size,
                                                                    max_length=replay_buffer_max_length)
 
-    collect_data(train_env, agent.policy, replay_buffer, steps=100)
+    random_policy = random_tf_policy.RandomTFPolicy(train_env.time_step_spec(),
+                                                    train_env.action_spec())
+
+    collect_data(train_env, random_policy, replay_buffer, steps=100)
 
     dataset = replay_buffer.as_dataset(num_parallel_calls=3,
                                        sample_batch_size=batch_size,
