@@ -3,6 +3,7 @@ from typing import Callable
 import numpy as np
 
 import tensorflow as tf
+from numpy import ndarray
 from tf_agents.agents import DqnAgent
 from tf_agents.agents.tf_agent import LossInfo
 from tf_agents.environments.tf_py_environment import TFPyEnvironment
@@ -142,7 +143,7 @@ class MultiDQNAgent(DqnAgent):
         time_step = self._augment_time_step(time_step)
         return time_step
 
-    def act(self, collect=False) -> Trajectory:
+    def act(self, collect=False) -> tuple[Trajectory, ndarray]:
         time_step = self._current_time_step()
 
         if collect:
@@ -161,7 +162,7 @@ class MultiDQNAgent(DqnAgent):
         if collect:
             self._replay_buffer.add_batch(traj)
 
-        return traj
+        return traj, next_time_step.reward
 
     def train_iteration(self) -> LossInfo:
         experience, info = self._replay_buffer.get_next(

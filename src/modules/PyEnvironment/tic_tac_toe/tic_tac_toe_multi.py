@@ -4,7 +4,8 @@ from .tic_tac_toe_environment import TicTacToeEnvironment
 from tf_agents.specs import BoundedArraySpec
 from tf_agents.trajectories.time_step import StepType, TimeStep
 
-REWARD_ILLEGAL_MOVE = np.asarray(-5, dtype=np.float32)
+from ..env_flags import REWARD_ILLEGAL_MOVE
+
 
 class TicTacToeMultiAgentEnv(TicTacToeEnvironment):
 
@@ -15,6 +16,9 @@ class TicTacToeMultiAgentEnv(TicTacToeEnvironment):
             'position': position_spec,
             'value': value_spec
         }
+
+    def get_turn(self):
+        return self._turn
 
     def _step(self, action: np.ndarray):
         if self._current_time_step.is_last():
@@ -38,6 +42,11 @@ class TicTacToeMultiAgentEnv(TicTacToeEnvironment):
             step_type = StepType.LAST
         else:
             step_type = StepType.MID
+
+        if self._turn == 1:
+            self._turn = 2
+        else:
+            self._turn = 1
 
         return TimeStep(step_type, reward, self._discount, self._states)
 

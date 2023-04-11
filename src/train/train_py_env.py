@@ -1,52 +1,56 @@
 from functools import partial
-
-from IPython.display import clear_output
 from itertools import cycle
-import random
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-
-from src.modules.PyEnvironment.tic_tac_toe.tic_tac_toe_environment import TicTacToeEnvironment
-from src.modules.PyEnvironment.tic_tac_toe.tic_tac_toe_multi import TicTacToeMultiAgentEnv, REWARD_ILLEGAL_MOVE
-from src.train.multi_agent import MultiDQNAgent
 import seaborn as sns
-sns.set()
+from IPython.display import clear_output
+
+from src.modules.PyEnvironment.draughts.draughts_environment import DraughtsEnvironment
+from src.modules.PyEnvironment.env_flags import REWARD_WIN, REWARD_ILLEGAL_MOVE, REWARD_NOT_PASSED
+from src.modules.PyEnvironment.tic_tac_toe.tic_tac_toe_environment import TicTacToeEnvironment
+from src.modules.PyEnvironment.tic_tac_toe.tic_tac_toe_multi import TicTacToeMultiAgentEnv
+from src.train.multi_agent import MultiDQNAgent
 
 from tf_agents.environments.tf_py_environment import TFPyEnvironment
 from tf_agents.trajectories.time_step import TimeStep
 from tf_agents.utils import common
 
-def training_episode(tf_ttt_env, player_1, player_2):
-    ts = tf_ttt_env.reset()
+sns.set()
+
+def training_episode(tf_env, player_1, player_2):
+    ts = tf_env.reset()
     player_1.reset()
     player_2.reset()
     time_steps = []
-    if bool(random.randint(0, 1)):
-        players = cycle([player_1, player_2])
-    else:
-        players = cycle([player_2, player_1])
+    players = cycle([player_1, player_2])
+    reward = None
+    player = None
     while not ts.is_last():
-        player = next(players)
-        player.act(collect=True)
-        ts = tf_ttt_env.current_time_step()
+        if reward != REWARD_NOT_PASSED:
+            player = next(players)
+        else:
+            print('hmm')
+        _, reward = player.act(collect=True)
+        print(reward)
+        ts = tf_env.current_time_step()
         time_steps.append(ts)
     return time_steps
 
 
 def collect_training_data():
     for game in range(episodes_per_iteration):
-        training_episode(tf_ttt_env, player_1, player_2)
+        training_episode(tf_env, player_1, player_2)
 
         p1_return = player_1.episode_return()
         p2_return = player_2.episode_return()
 
         if REWARD_ILLEGAL_MOVE in [p1_return, p2_return]:
             outcome = 'illegal'
-        elif p1_return == TicTacToeEnvironment.REWARD_WIN:
+        elif p1_return == REWARD_WIN:
             outcome = 'p1_win'
-        elif p2_return == TicTacToeEnvironment.REWARD_WIN:
+        elif p2_return == REWARD_WIN:
             outcome = 'p2_win'
         else:
             outcome = 'draw'
@@ -57,14 +61,14 @@ def collect_training_data():
             'p1_return': p1_return,
             'p2_return': p2_return,
             'outcome': outcome,
-            'final_step': tf_ttt_env.current_time_step()
+            'final_step': tf_env.current_time_step()
         })
 
 
-def train():
+def train(player1, player2):
     for _ in range(train_steps_per_iteration):
-        p1_train_info = player_1.train_iteration()
-        p2_train_info = player_2.train_iteration()
+        p1_train_info = player1.train_iteration()
+        p2_train_info = player2.train_iteration()
 
         loss_infos.append({
             'iteration': iteration,
@@ -73,7 +77,7 @@ def train():
         })
 
 
-def ttt_action_fn(player, action):
+def action_fn(player, action):
     return {'position': action, 'value': player}
 
 
@@ -140,6 +144,7 @@ def plot_history():
 
     plt.show()
 
+
 def p2_reward_fn(ts: TimeStep) -> float:
     if ts.reward == -1.0:
         return 1.0
@@ -148,7 +153,7 @@ def p2_reward_fn(ts: TimeStep) -> float:
     return ts.reward
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     num_iterations = 2000
     initial_collect_episodes = 100
     episodes_per_iteration = 10
@@ -163,14 +168,14 @@ if __name__=="__main__":
     games = []
     loss_infos = []
 
-    tic_tac_toe_env = TicTacToeMultiAgentEnv()
+    env = DraughtsEnvironment()
 
-    tf_ttt_env = TFPyEnvironment(tic_tac_toe_env)
+    tf_env = TFPyEnvironment(env)
 
     player_1 = MultiDQNAgent(
-        tf_ttt_env,
-        action_spec=tf_ttt_env.action_spec()['position'],
-        action_fn=partial(ttt_action_fn, 1),
+        tf_env,
+        action_spec=tf_env.action_spec()['position'],
+        action_fn=partial(action_fn, 1),
         name='Player1',
         learning_rate=learning_rate,
         training_batch_size=training_batch_size,
@@ -180,9 +185,9 @@ if __name__=="__main__":
     )
 
     player_2 = MultiDQNAgent(
-        tf_ttt_env,
-        action_spec=tf_ttt_env.action_spec()['position'],
-        action_fn=partial(ttt_action_fn, 2),
+        tf_env,
+        action_spec=tf_env.action_spec()['position'],
+        action_fn=partial(action_fn, 2),
         reward_fn=p2_reward_fn,
         name='Player2',
         learning_rate=learning_rate,
@@ -194,7 +199,7 @@ if __name__=="__main__":
 
     print('Collecting Initial Training Sample...')
     for _ in range(initial_collect_episodes):
-        training_episode(tf_ttt_env, player_1, player_2)
+        training_episode(tf_env, player_1, player_2)
     print('Samples collected')
 
     if iteration > 1:
@@ -202,7 +207,8 @@ if __name__=="__main__":
         clear_output(wait=True)
     while iteration < num_iterations:
         collect_training_data()
-        train()
+        print('data collected')
+        train(player_1, player_2)
         iteration += 1
         if iteration % plot_interval == 0:
             plot_history()

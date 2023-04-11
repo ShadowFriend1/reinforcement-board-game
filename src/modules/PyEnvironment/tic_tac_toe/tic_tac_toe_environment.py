@@ -24,6 +24,8 @@ from tf_agents.specs import BoundedArraySpec
 from tf_agents.trajectories.time_step import StepType
 from tf_agents.trajectories.time_step import TimeStep
 
+from src.modules.PyEnvironment.env_flags import REWARD_DRAW_OR_NOT_FINAL, REWARD_LOSS, REWARD_WIN
+
 
 class TicTacToeEnvironment(py_environment.PyEnvironment):
     """A state-settable environment for Tic-Tac-Toe game.
@@ -35,15 +37,7 @@ class TicTacToeEnvironment(py_environment.PyEnvironment):
   The states are a 3 x 3 array where 0 = empty, 1 = player, 2 = opponent.
   The action is a 2-d vector to indicate the position for the player's move.
   """
-    REWARD_WIN = np.asarray(1., dtype=np.float32)
-    REWARD_LOSS = np.asarray(-1., dtype=np.float32)
-    REWARD_DRAW_OR_NOT_FINAL = np.asarray(0., dtype=np.float32)
-    # A very small number such that it does not affect the value calculation.
-    REWARD_ILLEGAL_MOVE = np.asarray(-.001, dtype=np.float32)
 
-    REWARD_WIN.setflags(write=False)
-    REWARD_LOSS.setflags(write=False)
-    REWARD_DRAW_OR_NOT_FINAL.setflags(write=False)
 
     def __init__(self, rng: np.random.RandomState = None, discount=1.0):
         """Initializes TicTacToeEnvironment.
@@ -59,6 +53,8 @@ class TicTacToeEnvironment(py_environment.PyEnvironment):
         self._discount = np.asarray(discount, dtype=np.float32)
 
         self._states = None
+
+        self._turn = 1
 
     def action_spec(self):
         return BoundedArraySpec((2,), np.int32, minimum=0, maximum=2)
@@ -146,10 +142,10 @@ class TicTacToeEnvironment(py_environment.PyEnvironment):
         ])
         seqs = seqs.tolist()
         if [1, 1, 1] in seqs:
-            return True, TicTacToeEnvironment.REWARD_WIN  # win
+            return True, REWARD_WIN  # win
         if [2, 2, 2] in seqs:
-            return True, TicTacToeEnvironment.REWARD_LOSS  # loss
+            return True, REWARD_LOSS  # loss
         if 0 in states:
             # Not final
-            return False, TicTacToeEnvironment.REWARD_DRAW_OR_NOT_FINAL
-        return True, TicTacToeEnvironment.REWARD_DRAW_OR_NOT_FINAL  # draw
+            return False, REWARD_DRAW_OR_NOT_FINAL
+        return True, REWARD_DRAW_OR_NOT_FINAL  # draw
