@@ -1,7 +1,7 @@
 import numpy as np
 import pyglet
 
-from src.modules.GymGo.gym_go import govars, gogame
+from gym_go import gogame, govars
 
 
 def draw_circle(x, y, color, radius):

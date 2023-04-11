@@ -1,4 +1,4 @@
-# A class representing the chess game
+# A class representing the GymChess game
 
 import gym
 import numpy as np

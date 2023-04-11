@@ -3,7 +3,8 @@ from enum import Enum
 import gym
 import numpy as np
 
-from src.modules.GymGo.gym_go import govars, rendering, gogame
+from gym_go import rendering
+from gym_go import gogame, govars
 
 
 class RewardMethod(Enum):
@@ -14,6 +15,9 @@ class RewardMethod(Enum):
     """
     REAL = 'real'
     HEURISTIC = 'heuristic'
+
+
+REWARD_ILLEGAL_MOVE = np.asarray(-5, dtype=np.float32)
 
 
 class GoEnv(gym.Env):
@@ -64,10 +68,12 @@ class GoEnv(gym.Env):
             elif action is None:
                 action = self.size ** 2
             elif self.state()[govars.INVD_CHNL, action2d[0], action2d[1]] != 0:
-                action = self.size ** 2
+                print(self.state()[govars.INVD_CHNL])
+                print(action2d)
+                return np.copy(self.state_), REWARD_ILLEGAL_MOVE, self.done, self.info()
         except IndexError:
             print('out of bounds')
-            action = self.size ** 2
+            return np.copy(self.state_), REWARD_ILLEGAL_MOVE, self.done, self.info()
 
         self.state_ = gogame.next_state(self.state_, action, canonical=False)
         self.done = gogame.game_ended(self.state_)

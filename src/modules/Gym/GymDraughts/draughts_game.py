@@ -118,7 +118,7 @@ def batch_next_states(batch_states, batch_action1d, canonical=False):
 
     # Update invalid moves
     batch_states[:, draughts_vars.INVD_CHANNEL] = state_utils.batch_compute_invalid_moves(batch_states, batch_players,
-                                                                                batch_ko_protect)
+                                                                                          batch_ko_protect)
 
     # Switch turn
     state_utils.batch_set_turn(batch_states)

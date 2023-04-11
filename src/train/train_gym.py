@@ -129,11 +129,11 @@ def valid_move_splitter(observation):
 
 
 if __name__ == "__main__":
-    # Chess = chess:chess-v0, draughts = draughts:draughts-v0, go = gym-go:go-v0
+    # Chess = GymChess:chess-v0, Draughts = GymDraughts:GymDraughts-v0, go = gym-go:go-v0
     # env_name = input("Please input environment name in format '<install_name>:<environment_name>'")
     env_name = 'gym_go:go-v0'
-    train_py_env = suite_gym.load(env_name, gym_kwargs={'size': 19, 'komi': 0, 'reward_method': 'heuristic'})
-    test_py_env = suite_gym.load(env_name, gym_kwargs={'size': 19, 'komi': 0, 'reward_method': 'heuristic'})
+    train_py_env = suite_gym.load(env_name)
+    test_py_env = suite_gym.load(env_name)
     train_env = tf_py_environment.TFPyEnvironment(train_py_env)
     test_env = tf_py_environment.TFPyEnvironment(test_py_env)
     agent = build_model(train_env)
