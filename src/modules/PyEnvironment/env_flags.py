@@ -2,10 +2,10 @@ import numpy as np
 
 REWARD_WIN = np.asarray(100., dtype=np.float32)
 REWARD_LOSS = np.asarray(-100., dtype=np.float32)
-REWARD_TAKE_PAWN = np.asarray(1., dtype=np.float32)
-REWARD_DRAW_OR_NOT_FINAL = np.asarray(0., dtype=np.float32)
-REWARD_ILLEGAL_MOVE = np.asarray(-5, dtype=np.float32)
-REWARD_NOT_PASSED = np.asarray(2, dtype=np.float32)
+REWARD_TAKE_PAWN = np.asarray(5., dtype=np.float32)
+REWARD_DRAW_OR_NOT_FINAL = np.asarray(1., dtype=np.float32)
+REWARD_ILLEGAL_MOVE = np.asarray(-1, dtype=np.float32)
+REWARD_NOT_PASSED = np.asarray(10, dtype=np.float32)
 
 REWARD_WIN.setflags(write=False)
 REWARD_LOSS.setflags(write=False)

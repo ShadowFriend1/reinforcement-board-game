@@ -26,10 +26,7 @@ def training_episode(tf_env, player_1, player_2):
     player_1.reset()
     player_2.reset()
     time_steps = []
-    if bool(random.randint(0, 1)):
-        players = cycle([player_1, player_2])
-    else:
-        players = cycle([player_2, player_1])
+    players = cycle([player_1, player_2])
     reward = None
     player = None
     while not ts.is_last():
@@ -158,7 +155,7 @@ def p2_reward_fn(ts: TimeStep) -> float:
 if __name__ == "__main__":
     num_iterations = 100000
     initial_collect_episodes = 100
-    episodes_per_iteration = 10
+    episodes_per_iteration = 100
     train_steps_per_iteration = 1
     training_batch_size = 512
     training_num_steps = 2
