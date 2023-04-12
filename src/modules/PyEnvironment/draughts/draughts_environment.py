@@ -6,8 +6,7 @@ from tf_agents.specs import BoundedArraySpec
 from tf_agents.trajectories.time_step import StepType
 from tf_agents.trajectories.time_step import TimeStep
 
-from ..env_flags import REWARD_ILLEGAL_MOVE, REWARD_LOSS, REWARD_WIN, REWARD_DRAW_OR_NOT_FINAL, REWARD_NOT_PASSED, \
-    REWARD_TAKE_PAWN
+from ..env_flags import REWARD_ILLEGAL_MOVE, REWARD_LOSS, REWARD_WIN, REWARD_DRAW_OR_NOT_FINAL, REWARD_NOT_PASSED
 
 
 class DraughtsEnvironment(py_environment.PyEnvironment):
@@ -176,7 +175,6 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
         else:
             take_legal, middle = self.check_legal_take(self._states, position, move, action['value'])
             if take_legal:
-                take = True
                 self._states[middle] = 0
                 self._states[move] = self._states[position]
                 self._states[position] = 0
@@ -189,7 +187,7 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
                                 self._discount,
                                 self._states)
 
-        is_final, reward = self._check_states(self._states, take, extra)
+        is_final, reward = self._check_states(self._states, extra)
 
         if np.all(self._states == 0):
             step_type = StepType.FIRST
@@ -203,7 +201,7 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
         else:
             return TimeStep(step_type, reward, self._discount, self._states)
 
-    def _check_states(self, states: np.ndarray, take: bool, extra_take: bool):
+    def _check_states(self, states: np.ndarray, extra_take: bool):
         """Check if the given states are final and calculate reward.
 
         Args:
@@ -220,7 +218,5 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
             return True, REWARD_WIN  # 1 player win
         elif extra_take:
             return False, REWARD_NOT_PASSED  # ongoing with extra take for current player
-        elif take:
-            return False, REWARD_TAKE_PAWN  # taken a pawn, game ongoing
 
         return False, REWARD_DRAW_OR_NOT_FINAL  # ongoing

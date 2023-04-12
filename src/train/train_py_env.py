@@ -159,9 +159,9 @@ def p2_reward_fn(ts: TimeStep) -> float:
 
 
 if __name__ == "__main__":
-    num_iterations = 100000
-    initial_collect_episodes = 100
-    episodes_per_iteration = 100
+    num_iterations = 2000
+    initial_collect_episodes = 10
+    episodes_per_iteration = 10
     train_steps_per_iteration = 1
     training_batch_size = 512
     training_num_steps = 2
@@ -227,6 +227,7 @@ if __name__ == "__main__":
     while iteration < num_iterations:
         collect_training_data(tf_env, player_1, player_2)
         train(player_1, player_2)
+        print('iteration: ', iteration, ' completed')
         iteration += 1
         if iteration % plot_interval == 0:
             plot_history()
