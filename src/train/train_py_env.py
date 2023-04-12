@@ -18,6 +18,8 @@ from tf_agents.environments.tf_py_environment import TFPyEnvironment
 from tf_agents.trajectories.time_step import TimeStep
 from tf_agents.utils import common
 
+from src.train.network import MaskedNetwork
+
 sns.set()
 
 
@@ -78,6 +80,10 @@ def train(player1, player2):
 
 def action_fn(player, action):
     return {'position': action, 'value': player}
+
+
+def observation_and_action_constraint_splitter(observation):
+    return observation['state'], observation['mask']
 
 
 def plot_history():
@@ -167,9 +173,15 @@ if __name__ == "__main__":
     games = []
     loss_infos = []
 
-    env = DraughtsEnvironment()
+    env = TicTacToeMultiAgentEnv()
 
     tf_env = TFPyEnvironment(env)
+
+    player_1_q_network = MaskedNetwork(
+        action_spec=tf_env.action_spec()['position'],
+        observation_spec=tf_env.observation_spec(),
+        name='Player1QNet'
+    )
 
     player_1 = MultiDQNAgent(
         tf_env,
@@ -180,7 +192,14 @@ if __name__ == "__main__":
         training_batch_size=training_batch_size,
         training_num_steps=training_num_steps,
         replay_buffer_max_length=replay_buffer_size,
-        td_errors_loss_fn=common.element_wise_squared_loss
+        td_errors_loss_fn=common.element_wise_squared_loss,
+        q_network=player_1_q_network
+    )
+
+    player_2_q_network = MaskedNetwork(
+        action_spec=tf_env.action_spec()['position'],
+        observation_spec=tf_env.observation_spec(),
+        name='Player2QNet'
     )
 
     player_2 = MultiDQNAgent(
@@ -193,7 +212,8 @@ if __name__ == "__main__":
         training_batch_size=training_batch_size,
         training_num_steps=training_num_steps,
         replay_buffer_max_length=replay_buffer_size,
-        td_errors_loss_fn=common.element_wise_squared_loss
+        td_errors_loss_fn=common.element_wise_squared_loss,
+        q_network=player_2_q_network
     )
 
     print('Collecting Initial Training Sample...')

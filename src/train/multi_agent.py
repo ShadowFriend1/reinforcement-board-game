@@ -24,7 +24,7 @@ class MultiDQNAgent(DqnAgent):
                  action_spec: TensorSpec = None,
                  reward_fn: Callable = lambda time_step: time_step.reward,
                  action_fn: Callable = lambda action: action,
-                 name: str = 'IMAgent',
+                 name: str = 'MultiDQNAgent',
                  q_network=None,
                  # training params
                  replay_buffer_max_length: int = 1000,
@@ -49,7 +49,7 @@ class MultiDQNAgent(DqnAgent):
             step_type=env_ts_spec.step_type,
             reward=env_ts_spec.reward,
             discount=env_ts_spec.discount,
-            observation=q_network.input_tensor_spec
+            observation=self._observation_spec
         )
 
         optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
@@ -101,7 +101,7 @@ class MultiDQNAgent(DqnAgent):
     def episode_return(self) -> float:
         return np.sum(self._rewards)
 
-    def _observation_fn(self, observation: tf.Tensor) -> tf.Tensor:
+    def _observation_fn(self, observation: tf.Tensor):
         """
             Takes a tensor with specification self._env.observation_spec
             and extracts a tensor with specification self._observation_spec.
