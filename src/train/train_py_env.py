@@ -1,5 +1,6 @@
 from functools import partial
 from itertools import cycle
+import random
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -24,24 +25,24 @@ def training_episode(tf_env, player_1, player_2):
     player_1.reset()
     player_2.reset()
     time_steps = []
-    players = cycle([player_1, player_2])
+    if bool(random.randint(0, 1)):
+        players = cycle([player_1, player_2])
+    else:
+        players = cycle([player_2, player_1])
     reward = None
     player = None
     while not ts.is_last():
         if reward != REWARD_NOT_PASSED:
             player = next(players)
-        else:
-            print('hmm')
         _, reward = player.act(collect=True)
-        print(reward)
         ts = tf_env.current_time_step()
         time_steps.append(ts)
     return time_steps
 
 
-def collect_training_data():
+def collect_training_data(env, player_1, player_2):
     for game in range(episodes_per_iteration):
-        training_episode(tf_env, player_1, player_2)
+        training_episode(env, player_1, player_2)
 
         p1_return = player_1.episode_return()
         p2_return = player_2.episode_return()
@@ -154,13 +155,13 @@ def p2_reward_fn(ts: TimeStep) -> float:
 
 
 if __name__ == "__main__":
-    num_iterations = 2000
+    num_iterations = 100000
     initial_collect_episodes = 100
     episodes_per_iteration = 10
     train_steps_per_iteration = 1
     training_batch_size = 512
     training_num_steps = 2
-    replay_buffer_size = 3 * episodes_per_iteration * 9
+    replay_buffer_size = 5 * episodes_per_iteration * 4096
     learning_rate = 1e-3
     plot_interval = 50
 
@@ -206,8 +207,7 @@ if __name__ == "__main__":
         plot_history()
         clear_output(wait=True)
     while iteration < num_iterations:
-        collect_training_data()
-        print('data collected')
+        collect_training_data(tf_env, player_1, player_2)
         train(player_1, player_2)
         iteration += 1
         if iteration % plot_interval == 0:

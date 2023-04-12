@@ -10,15 +10,12 @@ from ..env_flags import REWARD_ILLEGAL_MOVE
 class TicTacToeMultiAgentEnv(TicTacToeEnvironment):
 
     def action_spec(self):
-        position_spec = BoundedArraySpec((), np.int32, minimum=0, maximum=8)
+        position_spec = BoundedArraySpec((), np.int32, minimum=0, maximum=9)
         value_spec = BoundedArraySpec((), np.int32, minimum=1, maximum=2)
         return {
             'position': position_spec,
             'value': value_spec
         }
-
-    def get_turn(self):
-        return self._turn
 
     def _step(self, action: np.ndarray):
         if self._current_time_step.is_last():
@@ -42,11 +39,6 @@ class TicTacToeMultiAgentEnv(TicTacToeEnvironment):
             step_type = StepType.LAST
         else:
             step_type = StepType.MID
-
-        if self._turn == 1:
-            self._turn = 2
-        else:
-            self._turn = 1
 
         return TimeStep(step_type, reward, self._discount, self._states)
 

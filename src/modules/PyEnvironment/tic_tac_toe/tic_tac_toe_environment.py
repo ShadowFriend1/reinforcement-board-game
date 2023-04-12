@@ -38,7 +38,6 @@ class TicTacToeEnvironment(py_environment.PyEnvironment):
   The action is a 2-d vector to indicate the position for the player's move.
   """
 
-
     def __init__(self, rng: np.random.RandomState = None, discount=1.0):
         """Initializes TicTacToeEnvironment.
 
@@ -53,8 +52,6 @@ class TicTacToeEnvironment(py_environment.PyEnvironment):
         self._discount = np.asarray(discount, dtype=np.float32)
 
         self._states = None
-
-        self._turn = 1
 
     def action_spec(self):
         return BoundedArraySpec((2,), np.int32, minimum=0, maximum=2)

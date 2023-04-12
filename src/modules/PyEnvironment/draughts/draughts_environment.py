@@ -34,7 +34,14 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
         return BoundedArraySpec((8, 8), np.int32, minimum=0, maximum=4)
 
     def _reset(self):
-        self._states = np.zeros((8, 8), np.int32)
+        self._states = np.asarray([[2, 0, 2, 0, 2, 0, 2, 0],
+                                   [0, 2, 0, 2, 0, 2, 0, 2],
+                                   [2, 0, 2, 0, 2, 0, 2, 0],
+                                   [0, 0, 0, 0, 0, 0, 0, 0],
+                                   [0, 0, 0, 0, 0, 0, 0, 0],
+                                   [1, 0, 1, 0, 1, 0, 1, 0],
+                                   [0, 1, 0, 1, 0, 1, 0, 1],
+                                   [1, 0, 1, 0, 1, 0, 1, 0]])
         return TimeStep(StepType.FIRST, np.asarray(0.0, dtype=np.float32),
                         self._discount, self._states)
 
@@ -46,18 +53,20 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
 
     def check_legal_common(self, state, position, move, player):
         if self.check_legal_tiles(state, position, move, player):
+            print('legal move to make')
             y_dif = move[0] - position[0]
             x_dif = move[1] - position[1]
-            if player == 1:
-                if x_dif in [-1, 1]:
-                    if (state[position] == player) and (y_dif == 1):
-                        return True
-            else:
-                if x_dif in [-1, 1]:
-                    if (state[position] == player) and (y_dif == -1):
-                        return True
-            if ((state[position] == player + 2) and y_dif in [-1, 1]) and (x_dif in [-1, 1]):
-                return True
+            if x_dif in [-1, 1]:
+                print('correct x dist', x_dif, y_dif)
+                if player == 1 and ((state[position] == player) and (y_dif == 1)):
+                    print('correct y dist')
+                    return True
+                elif player == 2 and ((state[position] == player) and (y_dif == -1)):
+                    print('correct y dist')
+                    return True
+                elif ((state[position] == player + 2) and y_dif in [-1, 1]) and (x_dif in [-1, 1]):
+                    print('correct y dist')
+                    return True
         return False
 
     def check_legal_take(self, state, position, move, player):
@@ -74,7 +83,7 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
             else:
                 if x_dif in [-2, 2]:
                     if ((state[position] == player) and (y_dif == -2)) or ((state[position] == player + 2) and
-                                                                          (y_dif in [-2, 2])):
+                                                                           (y_dif in [-2, 2])):
                         middle = [position[0] + (y_dif / 2), position[1] + (x_dif / 2)]
                         if state[middle] in [1, 3]:
                             return True
@@ -102,6 +111,10 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
         self._current_time_step = time_step
         self._states = time_step.observation
 
+    def get_legal_moves(self, state, agent):
+        mask = 0
+        return mask
+
     def _step(self, action: np.ndarray):
         if self._current_time_step.is_last():
             return self._reset()
@@ -109,7 +122,11 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
         extra = False
 
         index_flat = (np.array(range(4096)) == action['position']).reshape(1, 4096)
-        index_flat = index_flat / index_flat.sum()
+        index_flat = index_flat / np.sum(index_flat)
+        for n in range(len(index_flat[0])):
+            if np.isnan(index_flat[0][n]):
+                index_flat[0][n] = 0
+                index_flat = index_flat / np.sum(index_flat)
         index = np.random.choice(range(4096), p=np.squeeze(index_flat))
 
         position_index = index // 64
@@ -121,6 +138,8 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
         if self.check_legal_common(self._states, position, move, action['value']):
             self.states[move] = self._states[position]
             self._states[position] = 0
+            print('legal move')
+            print(self._states)
 
             if self._turn == 1:
                 self._turn = 2
@@ -134,6 +153,7 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
             self._states[middle] = 0
             self.states[move] = self._states[position]
             self._states[position] = 0
+            print(action['value'], ' takes ', middle)
 
             if not self.check_extra_takes(self._states, move, action['value']):
                 extra = True
