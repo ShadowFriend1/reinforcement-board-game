@@ -1,12 +1,12 @@
 tensorflow~=2.12.0
 tf_agents
 scipy~=1.10.1
-numpy~=1.24.2
+numpy
 matplotlib~=3.7.1
 setuptools~=65.6.3
 gym~=0.23.0
 scikit-learn~=1.2.2
-pyglet~=1.5.0
+pyglet
 cloudpickle
 protobuf
 pandas~=1.5.3

@@ -20,6 +20,7 @@ from tf_agents.utils import common
 
 sns.set()
 
+
 def training_episode(tf_env, player_1, player_2):
     ts = tf_env.reset()
     player_1.reset()
