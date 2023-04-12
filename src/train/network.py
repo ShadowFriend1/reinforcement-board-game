@@ -30,11 +30,7 @@ class MaskedNetwork(network.Network):
         state = observation['state']
         q_values, _ = self._q_net(state, step_type)
 
-        print(q_values)
-
         mask = observation['mask']
-
-        print(mask)
 
         small_constant = tf.constant(self._mask_q_value, dtype=q_values.dtype,
                                      shape=q_values.shape)
@@ -42,7 +38,5 @@ class MaskedNetwork(network.Network):
 
         masked_q_values = tf.where(tf.math.equal(zeros, mask),
                                    small_constant, q_values)
-
-        print(masked_q_values)
 
         return masked_q_values, network_state
