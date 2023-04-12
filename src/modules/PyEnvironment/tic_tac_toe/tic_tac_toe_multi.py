@@ -63,13 +63,10 @@ class TicTacToeMultiAgentEnv(TicTacToeEnvironment):
         if self._current_time_step.is_last():
             return self._reset()
 
-        mask_square = self.get_legal_actions(self._states)
-        mask = mask_square.reshape((9,))
-
         index_flat = np.array(range(9)) == action['position']
         index = index_flat.reshape(self._states.shape) == True
         if self._states[index] != 0:
-            observation = {'state': self._states, 'mask': mask}
+            observation = {'state': self._states, 'mask': np.ones((9,), np.int32)}
             print('illegal move')
             return TimeStep(StepType.LAST,
                             REWARD_ILLEGAL_MOVE,
@@ -77,6 +74,9 @@ class TicTacToeMultiAgentEnv(TicTacToeEnvironment):
                             observation)
 
         self._states[index] = action['value']
+
+        mask_square = self.get_legal_actions(self._states)
+        mask = mask_square.reshape((9,))
 
         is_final, reward = self._check_states(self._states)
 

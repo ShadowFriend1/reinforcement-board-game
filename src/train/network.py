@@ -40,9 +40,8 @@ class MaskedNetwork(network.Network):
                                      shape=q_values.shape)
         zeros = tf.zeros(shape=q_values.shape, dtype=mask.dtype)
 
-        masked_q_values = tf.reshape(tf.where(tf.math.equal(zeros, mask),
-                                              small_constant, q_values),
-                                     q_values.shape)
+        masked_q_values = tf.where(tf.math.equal(zeros, mask),
+                                   small_constant, q_values)
 
         print(masked_q_values)
 
