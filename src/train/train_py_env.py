@@ -170,7 +170,7 @@ if __name__ == "__main__":
     training_batch_size = 512
     training_num_steps = 2
     replay_buffer_size = 5 * episodes_per_iteration * 4096
-    learning_rate = 1e-3
+    learning_rate = 1e-5
     plot_interval = 50
 
     iteration = 1
@@ -236,9 +236,9 @@ if __name__ == "__main__":
 
     save_dir = "..\models"
 
-    player_1_policy_saver.save(os.path.join(save_dir, 'player_1_draughts'))
+    player_1_policy_saver.save(os.path.join(save_dir, 'player_1_draughts_attempt_1_rate_1e_3'))
 
-    player_2_policy_saver.save(os.path.join(save_dir, 'player_2_draughts'))
+    player_2_policy_saver.save(os.path.join(save_dir, 'player_2_draughts_attempt_1_rate_1e_3'))
 
     print('Collecting Initial Training Sample...')
     for _ in range(initial_collect_episodes):
@@ -254,7 +254,7 @@ if __name__ == "__main__":
         print('iteration: ', iteration, ' completed')
         iteration += 1
         if iteration % plot_interval == 0:
-            player_1_policy_saver.save(os.path.join(save_dir, 'player_1_draughts'))
-            player_2_policy_saver.save(os.path.join(save_dir, 'player_2_draughts'))
+            player_1_policy_saver.save(os.path.join(save_dir, 'player_1_draughts_attempt_1_rate_1e_3'))
+            player_2_policy_saver.save(os.path.join(save_dir, 'player_2_draughts_attempt_1_rate_1e_3'))
             plot_history()
             clear_output(wait=True)
