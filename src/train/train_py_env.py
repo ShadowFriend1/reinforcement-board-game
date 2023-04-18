@@ -71,7 +71,6 @@ def train(player1, player2):
     for _ in range(train_steps_per_iteration):
         p1_train_info = player1.train_iteration()
         p2_train_info = player2.train_iteration()
-        print('step complete')
 
         loss_infos.append({
             'iteration': iteration,
@@ -80,6 +79,7 @@ def train(player1, player2):
         })
 
 
+# Splits the player value and action value in the action space
 def action_fn(player, action):
     return {'position': action, 'value': player}
 
@@ -88,6 +88,7 @@ def observation_and_action_constraint_splitter(observation):
     return observation['state'], observation['mask']
 
 
+# Plots the training history for both players
 def plot_history():
     games_data = pd.DataFrame.from_records(games)
     loss_data = pd.DataFrame.from_records(loss_infos)
@@ -120,7 +121,7 @@ def plot_history():
 
     games_data['p1_win'] = games_data.outcome == 'p1_win'
     games_data['p2_win'] = games_data.outcome == 'p2_win'
-    games_data['time out'] = games_data.outcome == 'time_out'
+    games_data['time_out'] = games_data.outcome == 'time_out'
     grouped_games_data = games_data.groupby('iteration')
     cols = ['game', 'p1_win', 'p2_win', 'time_out']
     grouped_games_data = grouped_games_data[cols]
@@ -152,6 +153,7 @@ def plot_history():
     plt.show()
 
 
+# Flips the reward for player 2
 def p2_reward_fn(ts: TimeStep) -> float:
     if ts.reward == -REWARD_WIN:
         return REWARD_WIN
@@ -169,7 +171,7 @@ if __name__ == "__main__":
     training_num_steps = 2
     replay_buffer_size = 5 * episodes_per_iteration * 4096
     learning_rate = 1e-3
-    plot_interval = 1
+    plot_interval = 50
 
     iteration = 1
     games = []
@@ -252,8 +254,7 @@ if __name__ == "__main__":
         print('iteration: ', iteration, ' completed')
         iteration += 1
         if iteration % plot_interval == 0:
-            plot_history()
-            clear_output(wait=True)
             player_1_policy_saver.save(os.path.join(save_dir, 'player_1_draughts'))
             player_2_policy_saver.save(os.path.join(save_dir, 'player_2_draughts'))
-
+            plot_history()
+            clear_output(wait=True)
