@@ -8,7 +8,6 @@ class MaskedNetwork(network.Network):
                  observation_spec,
                  action_spec,
                  fc_layer_params=(75, 40),
-                 mask_q_value=-(10 ** 5),
                  activation_fn=tf.keras.activations.relu,
                  name='MaskQNetwork'):
         obs_spec = observation_spec['state']
@@ -19,12 +18,11 @@ class MaskedNetwork(network.Network):
         self._q_net = q_network.QNetwork(input_tensor_spec=obs_spec,
                                          action_spec=action_spec,
                                          fc_layer_params=fc_layer_params,
-                                         activation_fn=activation_fn)
+                                         activation_fn=activation_fn,
+                                         name=name)
 
         self._q_net.create_variables()
         self._q_net.summary()
-
-        self._mask_q_value = mask_q_value
 
     def call(self, observation, step_type=None, network_state=None):
         state = observation['state']
@@ -32,11 +30,9 @@ class MaskedNetwork(network.Network):
 
         mask = observation['mask']
 
-        small_constant = tf.constant(self._mask_q_value, dtype=q_values.dtype,
-                                     shape=q_values.shape)
-        zeros = tf.zeros(shape=q_values.shape, dtype=mask.dtype)
+        zeros = tf.zeros(shape=tf.shape(q_values), dtype=mask.dtype)
 
         masked_q_values = tf.where(tf.math.equal(zeros, mask),
-                                   small_constant, q_values)
+                                   0., tf.abs(q_values))
 
         return masked_q_values, network_state

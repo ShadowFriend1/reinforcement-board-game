@@ -24,6 +24,8 @@ class TicTacToeMultiAgentEnv(TicTacToeEnvironment):
 
         self._states = None
 
+        self._mask = None
+
     def action_spec(self):
         position_spec = BoundedArraySpec((), np.int32, minimum=0, maximum=8)
         value_spec = BoundedArraySpec((), np.int32, minimum=1, maximum=2)
@@ -42,8 +44,8 @@ class TicTacToeMultiAgentEnv(TicTacToeEnvironment):
 
     def _reset(self):
         self._states = np.zeros((3, 3), np.int32)
-        mask = np.ones((9,), np.int32)
-        observation = {'state': self._states, 'mask': mask}
+        self._mask = np.ones((9,), np.int32)
+        observation = {'state': self._states, 'mask': self._mask}
         return TimeStep(StepType.FIRST, np.asarray(0.0, dtype=np.float32),
                         self._discount, observation)
 
@@ -66,7 +68,7 @@ class TicTacToeMultiAgentEnv(TicTacToeEnvironment):
         index_flat = np.array(range(9)) == action['position']
         index = index_flat.reshape(self._states.shape) == True
         if self._states[index] != 0:
-            observation = {'state': self._states, 'mask': np.ones((9,), np.int32)}
+            observation = {'state': self._states, 'mask': self._mask}
             return TimeStep(StepType.LAST,
                             REWARD_ILLEGAL_MOVE,
                             self._discount,
@@ -75,7 +77,7 @@ class TicTacToeMultiAgentEnv(TicTacToeEnvironment):
         self._states[index] = action['value']
 
         mask_square = self.get_legal_actions(self._states)
-        mask = mask_square.reshape((9,))
+        self._mask = mask_square.reshape((9,))
 
         is_final, reward = self._check_states(self._states)
 
@@ -86,7 +88,7 @@ class TicTacToeMultiAgentEnv(TicTacToeEnvironment):
         else:
             step_type = StepType.MID
 
-        observation = {'state': self._states, 'mask': mask}
+        observation = {'state': self._states, 'mask': self._mask}
         return TimeStep(step_type, reward, self._discount, observation)
 
     def console_print(self):
@@ -96,7 +98,7 @@ class TicTacToeMultiAgentEnv(TicTacToeEnvironment):
         {} | {} | {}
         - + - + -
         {} | {} | {}
-        '''.format(*tuple(self.get_state().flatten()))
+        '''.format(*tuple(self.get_state().observation['state'].flatten()))
         table_str = table_str.replace('0', ' ')
         table_str = table_str.replace('1', 'X')
         table_str = table_str.replace('2', 'O')

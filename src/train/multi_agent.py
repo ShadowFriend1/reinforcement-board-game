@@ -33,6 +33,7 @@ class MultiDQNAgent(DqnAgent):
                  training_parallel_calls: int = 3,
                  training_prefetch_buffer_size: int = 3,
                  training_num_steps: int = 2,
+                 observation_and_action_constraint_splitter=None,
                  **dqn_kwargs):
 
         self._env = env
@@ -58,6 +59,7 @@ class MultiDQNAgent(DqnAgent):
                          q_network,
                          optimizer,
                          name=name,
+                         observation_and_action_constraint_splitter=observation_and_action_constraint_splitter,
                          **dqn_kwargs)
 
         self._policy_state = self.policy.get_initial_state(
@@ -98,8 +100,8 @@ class MultiDQNAgent(DqnAgent):
         )
         self._rewards = []
 
-    def episode_return(self) -> float:
-        return np.sum(self._rewards)
+    def episode_return(self) -> list:
+        return self._rewards
 
     def _observation_fn(self, observation: tf.Tensor):
         """
@@ -131,6 +133,9 @@ class MultiDQNAgent(DqnAgent):
             discount=time_step.discount,
             observation=observation
         )
+
+    def get_buffer(self):
+        return self._replay_buffer
 
     def _current_time_step(self) -> TimeStep:
         time_step = self._env.current_time_step()

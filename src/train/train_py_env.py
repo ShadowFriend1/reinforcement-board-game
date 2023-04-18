@@ -1,12 +1,15 @@
+import os.path
 from functools import partial
 from itertools import cycle
 import random
 
+import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from IPython.display import clear_output
+from tf_agents.policies import policy_saver
 
 from src.modules.PyEnvironment.draughts.draughts_environment import DraughtsEnvironment
 from src.modules.PyEnvironment.env_flags import REWARD_WIN, REWARD_ILLEGAL_MOVE, REWARD_NOT_PASSED
@@ -32,7 +35,7 @@ def training_episode(tf_env, player_1, player_2):
     reward = None
     player = None
     while not ts.is_last():
-        if reward != REWARD_NOT_PASSED:
+        if reward not in [REWARD_NOT_PASSED, REWARD_ILLEGAL_MOVE]:
             player = next(players)
         _, reward = player.act(collect=True)
         ts = tf_env.current_time_step()
@@ -47,20 +50,18 @@ def collect_training_data(env, player_1, player_2):
         p1_return = player_1.episode_return()
         p2_return = player_2.episode_return()
 
-        if REWARD_ILLEGAL_MOVE in [p1_return, p2_return]:
-            outcome = 'illegal'
-        elif p1_return == REWARD_WIN:
+        if REWARD_WIN in p1_return:
             outcome = 'p1_win'
-        elif p2_return == REWARD_WIN:
+        elif REWARD_WIN in p2_return:
             outcome = 'p2_win'
         else:
-            outcome = 'draw'
+            outcome = 'time_out'
 
         games.append({
             'iteration': iteration,
             'game': game,
-            'p1_return': p1_return,
-            'p2_return': p2_return,
+            'p1_return': np.sum(p1_return),
+            'p2_return': np.sum(p2_return),
             'outcome': outcome,
             'final_step': tf_env.current_time_step()
         })
@@ -70,6 +71,7 @@ def train(player1, player2):
     for _ in range(train_steps_per_iteration):
         p1_train_info = player1.train_iteration()
         p2_train_info = player2.train_iteration()
+        print('step complete')
 
         loss_infos.append({
             'iteration': iteration,
@@ -118,15 +120,15 @@ def plot_history():
 
     games_data['p1_win'] = games_data.outcome == 'p1_win'
     games_data['p2_win'] = games_data.outcome == 'p2_win'
-    games_data['illegal'] = games_data.outcome == 'illegal'
+    games_data['time out'] = games_data.outcome == 'time_out'
     grouped_games_data = games_data.groupby('iteration')
-    cols = ['game', 'p1_win', 'p2_win', 'illegal']
+    cols = ['game', 'p1_win', 'p2_win', 'time_out']
     grouped_games_data = grouped_games_data[cols]
     game_totals = grouped_games_data.max()['game'] + 1
     summed_games_data = grouped_games_data.sum()
     summed_games_data['p1_win_rate'] = summed_games_data.p1_win / game_totals
     summed_games_data['p2_win_rate'] = summed_games_data.p2_win / game_totals
-    summed_games_data['illegal_rate'] = summed_games_data.illegal / game_totals
+    summed_games_data['time_out_rate'] = summed_games_data.time_out / game_totals
     summed_games_data['iteration'] = smoothing * (summed_games_data.index // smoothing)
 
     sns.lineplot(ax=axs[1][0],
@@ -141,9 +143,9 @@ def plot_history():
                  label='Player 2 Win Rate')
     sns.lineplot(ax=axs[1][0],
                  x='iteration',
-                 y='illegal_rate',
+                 y='time_out_rate',
                  data=summed_games_data,
-                 label='Illegal Ending Rate')
+                 label='Time Out Ending Rate')
     axs[1][0].set_title('Outcomes History')
     axs[1][0].set_ylabel('ratio')
 
@@ -151,10 +153,10 @@ def plot_history():
 
 
 def p2_reward_fn(ts: TimeStep) -> float:
-    if ts.reward == -1.0:
-        return 1.0
-    if ts.reward == 1.0:
-        return -1.0
+    if ts.reward == -REWARD_WIN:
+        return REWARD_WIN
+    if ts.reward == REWARD_WIN:
+        return REWARD_WIN
     return ts.reward
 
 
@@ -167,13 +169,23 @@ if __name__ == "__main__":
     training_num_steps = 2
     replay_buffer_size = 5 * episodes_per_iteration * 4096
     learning_rate = 1e-3
-    plot_interval = 50
+    plot_interval = 1
 
     iteration = 1
     games = []
     loss_infos = []
 
-    env = TicTacToeMultiAgentEnv()
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    if gpus:
+        try:
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+                logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+                print(len(gpus), "Physical GPUS,", len(logical_gpus), "Logical GPUS")
+        except RuntimeError as e:
+            print(e)
+
+    env = DraughtsEnvironment()
 
     tf_env = TFPyEnvironment(env)
 
@@ -193,7 +205,7 @@ if __name__ == "__main__":
         training_num_steps=training_num_steps,
         replay_buffer_max_length=replay_buffer_size,
         td_errors_loss_fn=common.element_wise_squared_loss,
-        q_network=player_1_q_network
+        q_network=player_1_q_network,
     )
 
     player_2_q_network = MaskedNetwork(
@@ -213,8 +225,18 @@ if __name__ == "__main__":
         training_num_steps=training_num_steps,
         replay_buffer_max_length=replay_buffer_size,
         td_errors_loss_fn=common.element_wise_squared_loss,
-        q_network=player_2_q_network
+        q_network=player_2_q_network,
     )
+
+    player_1_policy_saver = policy_saver.PolicySaver(player_1.policy)
+
+    player_2_policy_saver = policy_saver.PolicySaver(player_2.policy)
+
+    save_dir = "..\models"
+
+    player_1_policy_saver.save(os.path.join(save_dir, 'player_1_draughts'))
+
+    player_2_policy_saver.save(os.path.join(save_dir, 'player_2_draughts'))
 
     print('Collecting Initial Training Sample...')
     for _ in range(initial_collect_episodes):
@@ -232,3 +254,6 @@ if __name__ == "__main__":
         if iteration % plot_interval == 0:
             plot_history()
             clear_output(wait=True)
+            player_1_policy_saver.save(os.path.join(save_dir, 'player_1_draughts'))
+            player_2_policy_saver.save(os.path.join(save_dir, 'player_2_draughts'))
+

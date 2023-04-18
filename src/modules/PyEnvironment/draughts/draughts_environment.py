@@ -22,8 +22,13 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
 
         self._states = None
 
+        self._mask = None
+
+        self._num_moves = 0
+        self._max_moves = 1000
+
     def action_spec(self):
-        position_spec = BoundedArraySpec((), np.int32, minimum=0, maximum=4096)
+        position_spec = BoundedArraySpec((), np.int32, minimum=0, maximum=4095)
         value_spec = BoundedArraySpec((), np.int32, minimum=1, maximum=2)
         return {
             'position': position_spec,
@@ -31,19 +36,27 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
         }
 
     def observation_spec(self):
-        return BoundedArraySpec((8, 8), np.int32, minimum=0, maximum=4)
+        state_spec = BoundedArraySpec((8, 8), np.int32, minimum=0, maximum=4)
+        mask_spec = BoundedArraySpec((4096,), np.int32, minimum=0, maximum=1)
+        return {
+            'state': state_spec,
+            'mask': mask_spec
+        }
 
     def _reset(self):
-        self._states = np.asarray([[2, 0, 2, 0, 2, 0, 2, 0],
-                                   [0, 2, 0, 2, 0, 2, 0, 2],
+        self._states = np.asarray([[0, 2, 0, 2, 0, 2, 0, 2],
                                    [2, 0, 2, 0, 2, 0, 2, 0],
+                                   [0, 2, 0, 2, 0, 2, 0, 2],
                                    [0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 0, 0, 0, 0],
                                    [1, 0, 1, 0, 1, 0, 1, 0],
                                    [0, 1, 0, 1, 0, 1, 0, 1],
                                    [1, 0, 1, 0, 1, 0, 1, 0]])
+        self._mask = self.get_legal_moves(self._states, 1)
+        observation = {'state': self._states, 'mask': self._mask}
+        self._num_moves = 0
         return TimeStep(StepType.FIRST, np.asarray(0.0, dtype=np.float32),
-                        self._discount, self._states)
+                        self._discount, observation)
 
     def check_legal_tiles(self, state, position, move, player):
         if (state[position] == player) or (state[position] == player + 2):
@@ -98,7 +111,7 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
                 if (0 <= move[0] < 8) and (0 <= move[1] < 8):
                     if self.check_legal_take(state, position, move, player):
                         return True
-        return False
+        return False, None
 
     def get_state(self) -> TimeStep:
         # Returning an unmodifiable copy of the state.
@@ -109,7 +122,7 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
         self._states = time_step.observation
 
     def get_legal_moves(self, state, player):
-        legal_flat = np.zeros((1, 4096))
+        legal_flat = np.zeros((4096,), np.int32)
         # Loop through each position on the board checking for legal normal moves
         y_dif = [-1, 1]
         x_dif = [-1, 1]
@@ -127,7 +140,7 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
                             if self.check_legal_common(state, position, move, player):
                                 position_flat = (position[0] * 8) + position[1]
                                 move_flat = (move[0] * 8) + move[1]
-                                legal_flat[0][(position_flat * 64) + move_flat] = 1
+                                legal_flat[(position_flat * 64) + move_flat] = 1
         # Checks for legal takes, if there is a legal take forces a take by removing all no take legal moves
         legal_take = False
         for y in range(len(state)):
@@ -137,13 +150,14 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
                     for x_m in x_dif_take:
                         move = (position[0] + y_m, position[1] + x_m)
                         if (0 <= move[0] < 8) and (0 <= move[1] < 8):
-                            if self.check_legal_take(state, position, move, player):
+                            legal, _ = self.check_legal_take(state, position, move, player)
+                            if legal:
                                 if not legal_take:
-                                    legal_flat = np.zeros((1, 4096))
+                                    legal_flat = np.zeros((4096,), np.int32)
                                     legal_take = True
                                 position_flat = (position[0] * 8) + position[1]
                                 move_flat = (move[0] * 8) + move[1]
-                                legal_flat[0][(position_flat * 64) + move_flat] = 1
+                                legal_flat[(position_flat * 64) + move_flat] = 1
         return legal_flat
 
     def _step(self, action: np.ndarray):
@@ -151,15 +165,16 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
             return self._reset()
 
         extra = False
-        take = False
+        next_player = action['value']
 
         index_flat = (np.array(range(4096)) == action['position']).reshape(1, 4096)
         index_flat = index_flat / index_flat.sum()
         if np.isnan(index_flat).any():
+            observation = {'state': self._states, 'mask': self._mask}
             return TimeStep(StepType.LAST,
                             REWARD_ILLEGAL_MOVE,
                             self._discount,
-                            self._states)
+                            observation)
         index = np.random.choice(range(4096), p=np.squeeze(index_flat))
 
         position_index = index // 64
@@ -182,12 +197,18 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
                 if self.check_extra_takes(self._states, move, action['value']):
                     extra = True
             else:
-                return TimeStep(StepType.LAST,
+                observation = {'state': self._states, 'mask': self._mask}
+                return TimeStep(StepType.MID,
                                 REWARD_ILLEGAL_MOVE,
                                 self._discount,
-                                self._states)
+                                observation)
 
-        is_final, reward = self._check_states(self._states, extra)
+        if ((action['value'] == 1) and (move[0] == 0)) or ((action['value'] == 2) and (move[0] == 7)):
+            self._states[move] = action['value'] + 2
+
+        self._num_moves += 1
+
+        is_final, reward = self._check_states(self._states, extra, action['value'])
 
         if np.all(self._states == 0):
             step_type = StepType.FIRST
@@ -196,12 +217,21 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
         else:
             step_type = StepType.MID
 
-        if extra:
-            return TimeStep(step_type, reward, np.asarray(0, dtype=np.float32), self._states)
-        else:
-            return TimeStep(step_type, reward, self._discount, self._states)
+        if not extra:
+            if action['value'] == 1:
+                next_player = 2
+            else:
+                next_player = 1
 
-    def _check_states(self, states: np.ndarray, extra_take: bool):
+        self._mask = self.get_legal_moves(self._states, next_player)
+
+        observation = {'state': self._states, 'mask': self._mask}
+        if extra:
+            return TimeStep(step_type, reward, np.asarray(0, dtype=np.float32), observation)
+        else:
+            return TimeStep(step_type, reward, self._discount, observation)
+
+    def _check_states(self, states: np.ndarray, extra_take: bool, player: int):
         """Check if the given states are final and calculate reward.
 
         Args:
@@ -212,11 +242,37 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
           are final are not, and reward is the reward for stepping into the states
           The meaning of reward: 0 = not decided or draw, 1 = win, -1 = loss
         """
-        if not 1 or 3 in states:
+        if not any(x in states for x in [1, 3]):
             return True, REWARD_LOSS  # 1 player loss
-        elif not 2 or 4 in states:
+        elif not any(x in states for x in [2, 4]):
             return True, REWARD_WIN  # 1 player win
+        elif self._mask.sum() == 0:
+            if player == 1:
+                return True, REWARD_LOSS
+            else:
+                return True, REWARD_WIN
+        elif self._num_moves > self._max_moves:
+            return True, REWARD_DRAW_OR_NOT_FINAL
         elif extra_take:
             return False, REWARD_NOT_PASSED  # ongoing with extra take for current player
-
         return False, REWARD_DRAW_OR_NOT_FINAL  # ongoing
+
+    def console_print(self):
+        table_str = '''
+        {} | {} | {} | {} | {} | {} | {} | {}
+        - + - + - + - + - + - + - + -
+        {} | {} | {} | {} | {} | {} | {} | {}
+        - + - + - + - + - + - + - + -
+        {} | {} | {} | {} | {} | {} | {} | {}
+        - + - + - + - + - + - + - + -
+        {} | {} | {} | {} | {} | {} | {} | {}
+        - + - + - + - + - + - + - + -
+        {} | {} | {} | {} | {} | {} | {} | {}
+        - + - + - + - + - + - + - + -
+        {} | {} | {} | {} | {} | {} | {} | {}
+        - + - + - + - + - + - + - + -
+        {} | {} | {} | {} | {} | {} | {} | {}
+        - + - + - + - + - + - + - + -
+        {} | {} | {} | {} | {} | {} | {} | {}
+        '''.format(*tuple(self.get_state().observation['state'].flatten()))
+        print(table_str)
