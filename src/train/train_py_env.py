@@ -236,9 +236,9 @@ if __name__ == "__main__":
 
     save_dir = "..\models"
 
-    player_1_policy_saver.save(os.path.join(save_dir, 'player_1_draughts_attempt_1_rate_1e_3'))
+    player_1_policy_saver.save(os.path.join(save_dir, 'player_1_draughts'))
 
-    player_2_policy_saver.save(os.path.join(save_dir, 'player_2_draughts_attempt_1_rate_1e_3'))
+    player_2_policy_saver.save(os.path.join(save_dir, 'player_2_draughts'))
 
     print('Collecting Initial Training Sample...')
     for _ in range(initial_collect_episodes):
@@ -254,7 +254,7 @@ if __name__ == "__main__":
         print('iteration: ', iteration, ' completed')
         iteration += 1
         if iteration % plot_interval == 0:
-            player_1_policy_saver.save(os.path.join(save_dir, 'player_1_draughts_attempt_1_rate_1e_3'))
-            player_2_policy_saver.save(os.path.join(save_dir, 'player_2_draughts_attempt_1_rate_1e_3'))
+            player_1_policy_saver.save(os.path.join(save_dir, 'player_1_draughts'))
+            player_2_policy_saver.save(os.path.join(save_dir, 'player_2_draughts'))
             plot_history()
             clear_output(wait=True)
