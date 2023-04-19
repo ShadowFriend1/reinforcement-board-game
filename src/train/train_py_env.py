@@ -103,7 +103,7 @@ def plot_history():
     loss_melted = pd.melt(loss_data,
                           id_vars=['iteration'],
                           value_vars=['Player 1', 'Player 2'])
-    smoothing = iteration // 10
+    smoothing = iteration // 50
     loss_melted.iteration = smoothing * (loss_melted.iteration // smoothing)
 
     sns.lineplot(ax=axs[0][0],
