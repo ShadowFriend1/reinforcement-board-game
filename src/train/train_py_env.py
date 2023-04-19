@@ -153,6 +153,8 @@ def plot_history():
     axs[1][0].set_title('Outcomes History')
     axs[1][0].set_ylabel('ratio')
 
+    plt.title(data_title)
+
     plt.show()
 
 
@@ -201,15 +203,19 @@ if __name__ == "__main__":
         case 1:
             env = TicTacToeMultiAgentEnv()
             checkpoint_dir = os.path.join('..', 'models', 'tictactoe')
+            data_title = 'Tic Tac Toe Policy Training'
         case 2:
             env = DraughtsEnvironment()
             checkpoint_dir = os.path.join('..', 'models', 'draughts')
+            data_title = 'Draughts Policy Training'
         case 3:
             env = ChessEnvironment()
             checkpoint_dir = os.path.join('..', 'models', 'chess')
+            data_title = 'Chess Policy Training'
         case _:
             env = GoEnvironment()
             checkpoint_dir = os.path.join('..', 'models', 'go')
+            data_title = 'Go Policy Training'
 
     tf_env = TFPyEnvironment(env)
 
