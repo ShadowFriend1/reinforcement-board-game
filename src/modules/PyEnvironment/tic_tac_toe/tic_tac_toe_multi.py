@@ -69,7 +69,7 @@ class TicTacToeMultiAgentEnv(TicTacToeEnvironment):
         index = index_flat.reshape(self._states.shape) == True
         if self._states[index] != 0:
             observation = {'state': self._states, 'mask': self._mask}
-            return TimeStep(StepType.LAST,
+            return TimeStep(StepType.MID,
                             REWARD_ILLEGAL_MOVE,
                             self._discount,
                             observation)

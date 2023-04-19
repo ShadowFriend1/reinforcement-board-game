@@ -1,4 +1,6 @@
 import copy
+from typing import Optional, Text
+
 import numpy as np
 
 from tf_agents.environments import py_environment

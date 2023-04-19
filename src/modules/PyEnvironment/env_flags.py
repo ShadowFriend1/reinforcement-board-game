@@ -6,6 +6,7 @@ REWARD_DRAW_OR_NOT_FINAL = np.asarray(0., dtype=np.float32)
 REWARD_ILLEGAL_MOVE = np.asarray(-0.01, dtype=np.float32)
 REWARD_NOT_PASSED = np.asarray(0.02, dtype=np.float32)
 
+
 REWARD_WIN.setflags(write=False)
 REWARD_LOSS.setflags(write=False)
 REWARD_DRAW_OR_NOT_FINAL.setflags(write=False)

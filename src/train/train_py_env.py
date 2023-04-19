@@ -1,4 +1,5 @@
 import os.path
+import tempfile
 from functools import partial
 from itertools import cycle
 import random
@@ -11,8 +12,10 @@ import seaborn as sns
 from IPython.display import clear_output
 from tf_agents.policies import policy_saver
 
+from src.modules.PyEnvironment.chess.chess_environment import ChessEnvironment
 from src.modules.PyEnvironment.draughts.draughts_environment import DraughtsEnvironment
 from src.modules.PyEnvironment.env_flags import REWARD_WIN, REWARD_ILLEGAL_MOVE, REWARD_NOT_PASSED
+from src.modules.PyEnvironment.go.go_environment import GoEnvironment
 from src.modules.PyEnvironment.tic_tac_toe.tic_tac_toe_environment import TicTacToeEnvironment
 from src.modules.PyEnvironment.tic_tac_toe.tic_tac_toe_multi import TicTacToeMultiAgentEnv
 from src.train.multi_agent import MultiDQNAgent
@@ -100,7 +103,7 @@ def plot_history():
     loss_melted = pd.melt(loss_data,
                           id_vars=['iteration'],
                           value_vars=['Player 1', 'Player 2'])
-    smoothing = iteration // 50
+    smoothing = iteration // 10
     loss_melted.iteration = smoothing * (loss_melted.iteration // smoothing)
 
     sns.lineplot(ax=axs[0][0],
@@ -163,15 +166,15 @@ def p2_reward_fn(ts: TimeStep) -> float:
 
 
 if __name__ == "__main__":
-    num_iterations = 2000
-    initial_collect_episodes = 10
-    episodes_per_iteration = 10
+    num_iterations = 100
+    initial_collect_episodes = 5
+    episodes_per_iteration = 5
     train_steps_per_iteration = 1
     training_batch_size = 512
     training_num_steps = 2
     replay_buffer_size = 5 * episodes_per_iteration * 4096
     learning_rate = 1e-5
-    plot_interval = 50
+    plot_interval = 10
 
     iteration = 1
     games = []
@@ -187,7 +190,26 @@ if __name__ == "__main__":
         except RuntimeError as e:
             print(e)
 
-    env = DraughtsEnvironment()
+    request = None
+    while request not in [1, 2, 3, 4]:
+        try:
+            request = int(input('1 for TicTacToe, 2 for Draughts, 3 for Chess, 4 for Go'))
+        except TypeError:
+            print('Needs a Number')
+
+    match request:
+        case 1:
+            env = TicTacToeMultiAgentEnv()
+            checkpoint_dir = os.path.join('..', 'models', 'tictactoe')
+        case 2:
+            env = DraughtsEnvironment()
+            checkpoint_dir = os.path.join('..', 'models', 'draughts')
+        case 3:
+            env = ChessEnvironment()
+            checkpoint_dir = os.path.join('..', 'models', 'chess')
+        case _:
+            env = GoEnvironment()
+            checkpoint_dir = os.path.join('..', 'models', 'go')
 
     tf_env = TFPyEnvironment(env)
 
@@ -196,6 +218,8 @@ if __name__ == "__main__":
         observation_spec=tf_env.observation_spec(),
         name='Player1QNet'
     )
+
+    global_step_1 = tf.compat.v1.train.get_or_create_global_step()
 
     player_1 = MultiDQNAgent(
         tf_env,
@@ -208,13 +232,17 @@ if __name__ == "__main__":
         replay_buffer_max_length=replay_buffer_size,
         td_errors_loss_fn=common.element_wise_squared_loss,
         q_network=player_1_q_network,
+        train_step_counter=global_step_1
     )
+    player_1.initialize()
 
     player_2_q_network = MaskedNetwork(
         action_spec=tf_env.action_spec()['position'],
         observation_spec=tf_env.observation_spec(),
         name='Player2QNet'
     )
+
+    global_step_2 = tf.compat.v1.train.get_or_create_global_step()
 
     player_2 = MultiDQNAgent(
         tf_env,
@@ -228,17 +256,15 @@ if __name__ == "__main__":
         replay_buffer_max_length=replay_buffer_size,
         td_errors_loss_fn=common.element_wise_squared_loss,
         q_network=player_2_q_network,
+        train_step_counter=global_step_2
     )
+    player_2.initialize()
 
-    player_1_policy_saver = policy_saver.PolicySaver(player_1.policy)
+    policy_checkpointer_1 = common.Checkpointer(ckpt_dir=os.path.join(checkpoint_dir, 'player_1'),
+                                                policy=player_1.policy)
 
-    player_2_policy_saver = policy_saver.PolicySaver(player_2.policy)
-
-    save_dir = "..\models"
-
-    player_1_policy_saver.save(os.path.join(save_dir, 'player_1_draughts'))
-
-    player_2_policy_saver.save(os.path.join(save_dir, 'player_2_draughts'))
+    policy_checkpointer_2 = common.Checkpointer(ckpt_dir=os.path.join(checkpoint_dir, 'player_2'),
+                                                policy=player_2.policy)
 
     print('Collecting Initial Training Sample...')
     for _ in range(initial_collect_episodes):
@@ -254,7 +280,7 @@ if __name__ == "__main__":
         print('iteration: ', iteration, ' completed')
         iteration += 1
         if iteration % plot_interval == 0:
-            player_1_policy_saver.save(os.path.join(save_dir, 'player_1_draughts'))
-            player_2_policy_saver.save(os.path.join(save_dir, 'player_2_draughts'))
+            policy_checkpointer_1.save(global_step=global_step_1)
+            policy_checkpointer_2.save(global_step=global_step_2)
             plot_history()
             clear_output(wait=True)
