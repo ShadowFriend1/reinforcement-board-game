@@ -170,4 +170,7 @@ class GoEnvironment(py_environment.PyEnvironment):
         - + - + - + - + - + - + - + -
         {} | {} | {} | {} | {} | {} | {} | {}
         '''.format(*tuple(self.get_state().observation['state'].flatten()))
+        table_str = table_str.replace('0', ' ')
+        table_str = table_str.replace('1', 'W')
+        table_str = table_str.replace('2', 'B')
         print(table_str)
