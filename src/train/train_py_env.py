@@ -176,7 +176,7 @@ if __name__ == "__main__":
     training_num_steps = 2
     replay_buffer_size = 5 * episodes_per_iteration * 4096
     learning_rate = 1e-5
-    plot_interval = 50
+    plot_interval = 1000
 
     iteration = 1
     games = []
