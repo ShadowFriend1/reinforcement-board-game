@@ -2,9 +2,11 @@ import os
 from functools import partial
 
 import PySimpleGUI as sg
+import numpy as np
 import tensorflow as tf
 from tf_agents.environments import TFPyEnvironment
 
+from src.modules.draughts.draughtsGUI_pygame import DraughtsGUI_pygame
 from src.modules.draughts.draughts_environment import DraughtsEnvironment
 from src.play.human_agent import HumanAgent
 from src.train.multi_agent import MultiDQNAgent
@@ -74,3 +76,16 @@ def play():
         action_fn=partial(action_fn, human_player),
         name='PlayerHuman'
     )
+
+    gui = DraughtsGUI_pygame(image_dir=os.path.join('..', 'modules', 'draughts', 'images'))
+    board_state = tf_env.render().numpy()
+
+    board_str = board_state.astype(str)
+
+    board_str[board_state == 0] = 'e'
+    board_str[board_state == 1] = 'wP'
+    board_str[board_state == 2] = 'bP'
+
+    board_str = np.squeeze(board_str).tolist()
+
+    print(gui.GetPlayerInput(board_str, 'white'))

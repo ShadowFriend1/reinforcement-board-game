@@ -1,15 +1,12 @@
 import os
 
 import PySimpleGUI as sg
-from src.modules.tic_tac_toe.tic_tac_toe_multi import TicTacToeMultiAgentEnv
-from src.modules.chess.play import play
-from src.modules.go.go_environment import GoEnvironment
-from src.modules.draughts.draughts_environment import DraughtsEnvironment
+
 
 # Import a specified module, allows for user created modules to be accessed
 def import_name(module_name, name):
     try:
-        module = __import__(module_name, globals(), locals( ), [name])
+        module = __import__(module_name, globals(), locals(), [name])
     except ImportError:
         return None
     return vars(module)[name]
