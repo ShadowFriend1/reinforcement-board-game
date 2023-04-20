@@ -2,10 +2,17 @@ import os
 
 import PySimpleGUI as sg
 from src.modules.tic_tac_toe.tic_tac_toe_multi import TicTacToeMultiAgentEnv
-from src.modules.chess.chess_environment import ChessEnvironment
+from src.modules.chess.play import play
 from src.modules.go.go_environment import GoEnvironment
 from src.modules.draughts.draughts_environment import DraughtsEnvironment
 
+# Import a specified module, allows for user created modules to be accessed
+def import_name(module_name, name):
+    try:
+        module = __import__(module_name, globals(), locals( ), [name])
+    except ImportError:
+        return None
+    return vars(module)[name]
 
 def play_gui():
     layout = [[sg.Text("Choose A Game Environment")],
@@ -20,34 +27,34 @@ def play_gui():
     # Create the window
     window = sg.Window('Play Against AI', layout)
     # Display and interact with the Window using an Event Loop
-    game = None
     while True:
         event, values = window.read()
         # See if user wants to quit or window was closed
-        if event in ['TicTacToe', 'Draughts', 'Chess', 'Go']:
-            game = event
-            break
+        if event in ['TicTacToe', 'Draughts', 'Chess', 'Go', 'Ok']:
+            window.hide()
         if event == sg.WINDOW_CLOSED or event == 'Quit':
+            window.close()
             break
-        # Output a message to the window
-        window['-OUTPUT-'].update('Hello ' + values['-INPUT-'] + "! Thanks for trying PySimpleGUI")
 
-    # Finish up by removing from the screen
-    window.close()
+        module_dir = "src.modules."
 
-    match event:
-        case 'TicTacToe':
-            print(1)
-            return False
-        case 'Draughts':
-            print(2)
-            return False
-        case 'Chess':
-            print(3)
-            return False
-        case 'Go':
-            print(4)
-            return False
+        match event:
+            case 'TicTacToe':
+                play_class = import_name(module_dir + "tic_tac_toe.play", "play")
+            case 'Draughts':
+                play_class = import_name(module_dir + "draughts.play", "play")
+            case 'Chess':
+                play_class = import_name(module_dir + "chess.play", "play")
+            case 'Go':
+                play_class = import_name(module_dir + "go.play", "play")
+            case _:
+                play_class = import_name(values['-IN-'], "play")
+
+        play_class()
+
+        window.un_hide()
+
+    return True
 
 
 if __name__ == "__main__":

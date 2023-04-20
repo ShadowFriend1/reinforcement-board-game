@@ -66,14 +66,7 @@ class GoEnvironment(py_environment.PyEnvironment):
     def check_legal_place(self, state, position, player):
         # Checks for legal placement (empty space)
         if self.check_legal_tiles(state, position, player):
-            # Checks that the move will not result in the own players pieces being taken
-            next_state = np.copy(state)
-            next_state[position] = player
-            check_state, _ = self.update_board(next_state, position)
-            if check_state[position] == 0:
-                return False
-            else:
-                return True
+            return True
         return False
 
     def get_state(self) -> TimeStep:
@@ -221,6 +214,8 @@ class GoEnvironment(py_environment.PyEnvironment):
         position = (index // 19, index % 19)
 
         if index == 361:
+            print('player ', action['value'], ' passed', self._passed)
+            print(self._mask.sum())
             passed = True
         else:
             if self.check_legal_place(self._states, position, action['value']):
@@ -259,7 +254,7 @@ class GoEnvironment(py_environment.PyEnvironment):
         else:
             return TimeStep(step_type, reward, self._discount, observation)
 
-    # Currently unimplemented so scoring is slightly wrong, but i couldn't find an effective way to achieve it
+    # Currently unimplemented so scoring is slightly wrong, but I couldn't find an effective way to achieve it
     def remove_dead(self, state):
         next_state = np.copy(state)
         killed_white = 0
@@ -277,7 +272,7 @@ class GoEnvironment(py_environment.PyEnvironment):
         score_white += killed[0]
         score_black += killed[1]
         checked = np.zeros(end_state.shape)
-        for y in range(len(state) + 1):
+        for y in range(len(state)):
             for x in range(len(state[0])):
                 position = (y, x)
                 if (end_state[position] == 0) and (checked[position] == 0):

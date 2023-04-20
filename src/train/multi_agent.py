@@ -137,6 +137,9 @@ class MultiDQNAgent(DqnAgent):
     def get_buffer(self):
         return self._replay_buffer
 
+    def set_policy(self, policy):
+        self._policy = policy
+
     def _current_time_step(self) -> TimeStep:
         time_step = self._env.current_time_step()
         time_step = self._augment_time_step(time_step)

@@ -166,14 +166,14 @@ def p2_reward_fn(ts: TimeStep) -> float:
 
 if __name__ == "__main__":
 
-    num_iterations = 100
+    num_iterations = 1000
     initial_collect_episodes = 5
     episodes_per_iteration = 5
     train_steps_per_iteration = 1
     training_batch_size = 512
     training_num_steps = 2
     replay_buffer_size = 5 * episodes_per_iteration * 4098
-    plot_interval = 10
+    plot_interval = 100
 
     iteration = 1
     games = []
@@ -237,8 +237,6 @@ if __name__ == "__main__":
         name='Player1QNet'
     )
 
-    global_step_1 = tf.compat.v1.train.get_or_create_global_step()
-
     player_1 = MultiDQNAgent(
         tf_env,
         action_spec=tf_env.action_spec()['position'],
@@ -249,8 +247,7 @@ if __name__ == "__main__":
         training_num_steps=training_num_steps,
         replay_buffer_max_length=replay_buffer_size,
         td_errors_loss_fn=common.element_wise_squared_loss,
-        q_network=player_1_q_network,
-        train_step_counter=global_step_1
+        q_network=player_1_q_network
     )
     player_1.initialize()
 
@@ -259,8 +256,6 @@ if __name__ == "__main__":
         observation_spec=tf_env.observation_spec(),
         name='Player2QNet'
     )
-
-    global_step_2 = tf.compat.v1.train.get_or_create_global_step()
 
     player_2 = MultiDQNAgent(
         tf_env,
@@ -273,8 +268,7 @@ if __name__ == "__main__":
         training_num_steps=training_num_steps,
         replay_buffer_max_length=replay_buffer_size,
         td_errors_loss_fn=common.element_wise_squared_loss,
-        q_network=player_2_q_network,
-        train_step_counter=global_step_2
+        q_network=player_2_q_network
     )
     player_2.initialize()
 
@@ -304,7 +298,7 @@ if __name__ == "__main__":
         if iteration % plot_interval == 0:
             policy_saver_1.save(os.path.join(policy_dir, 'player_1'))
             policy_saver_2.save(os.path.join(policy_dir, 'player_2'))
-            policy_checkpointer_1.save(global_step=global_step_1)
-            policy_checkpointer_2.save(global_step=global_step_2)
+            policy_checkpointer_1.save(global_step=tf.convert_to_tensor(iteration))
+            policy_checkpointer_2.save(global_step=tf.convert_to_tensor(iteration))
             plot_history()
             clear_output(wait=True)
