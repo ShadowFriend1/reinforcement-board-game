@@ -1,8 +1,6 @@
 import os.path
-import tempfile
 from functools import partial
 from itertools import cycle
-import random
 
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -12,12 +10,11 @@ import seaborn as sns
 from IPython.display import clear_output
 from tf_agents.policies import policy_saver
 
-from src.modules.PyEnvironment.chess.chess_environment import ChessEnvironment
-from src.modules.PyEnvironment.draughts.draughts_environment import DraughtsEnvironment
-from src.modules.PyEnvironment.env_flags import REWARD_WIN, REWARD_ILLEGAL_MOVE, REWARD_NOT_PASSED
-from src.modules.PyEnvironment.go.go_environment import GoEnvironment
-from src.modules.PyEnvironment.tic_tac_toe.tic_tac_toe_environment import TicTacToeEnvironment
-from src.modules.PyEnvironment.tic_tac_toe.tic_tac_toe_multi import TicTacToeMultiAgentEnv
+from src.modules.chess.chess_environment import ChessEnvironment
+from src.modules.draughts.draughts_environment import DraughtsEnvironment
+from src.modules.env_flags import REWARD_WIN, REWARD_ILLEGAL_MOVE, REWARD_NOT_PASSED
+from src.modules.go.go_environment import GoEnvironment
+from src.modules.tic_tac_toe.tic_tac_toe_multi import TicTacToeMultiAgentEnv
 from src.train.multi_agent import MultiDQNAgent
 
 from tf_agents.environments.tf_py_environment import TFPyEnvironment
@@ -169,14 +166,14 @@ def p2_reward_fn(ts: TimeStep) -> float:
 
 if __name__ == "__main__":
 
-    num_iterations = 4000
+    num_iterations = 100
     initial_collect_episodes = 5
     episodes_per_iteration = 5
     train_steps_per_iteration = 1
     training_batch_size = 512
     training_num_steps = 2
     replay_buffer_size = 5 * episodes_per_iteration * 4098
-    plot_interval = 1000
+    plot_interval = 10
 
     iteration = 1
     games = []
