@@ -112,7 +112,8 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
             for y in y_dif:
                 move = (position[0] + y, position[1] + x)
                 if (0 <= move[0] < 8) and (0 <= move[1] < 8):
-                    if self.check_legal_take(state, position, move, player):
+                    legal, _ = self.check_legal_take(state, position, move, player)
+                    if legal:
                         return True
         return False, None
 
@@ -199,8 +200,8 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
                 self._states[middle] = 0
                 self._states[move] = self._states[position]
                 self._states[position] = 0
-
-                if self.check_extra_takes(self._states, move, action['value']):
+                extra_legal, _ = self.check_extra_takes(self._states, move, action['value'])
+                if extra_legal:
                     extra = True
             else:
                 illegal = True

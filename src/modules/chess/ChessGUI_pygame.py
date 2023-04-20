@@ -32,14 +32,15 @@ def ConvertToAlgebraicNotation_col(col):
 
 
 class ChessGUI_pygame:
-    def __init__(self, graphicStyle=1):
+    def __init__(self, graphicStyle=1, image_dir='images'):
         os.environ['SDL_VIDEO_CENTERED'] = '1'  # should center pygame window on the screen
         pygame.init()
         pygame.display.init()
-        self.screen = pygame.display.set_mode((850, 500))
+        self.screen = pygame.display.set_mode((500, 500))
         self.boardStart_x = 50
         self.boardStart_y = 50
         pygame.display.set_caption('Python Chess')
+        self.image_dir = image_dir
         self.LoadImages(graphicStyle)
         # pygame.font.init() - should be already called by pygame.init()
         self.fontDefault = pygame.font.Font(None, 20)
@@ -47,53 +48,53 @@ class ChessGUI_pygame:
     def LoadImages(self, graphicStyle):
         if graphicStyle == 0:
             self.square_size = 50  # all images must be images 50 x 50 pixels
-            self.white_square = pygame.image.load(os.path.join("images", "white_square.png")).convert()
-            self.brown_square = pygame.image.load(os.path.join("images", "brown_square.png")).convert()
-            self.cyan_square = pygame.image.load(os.path.join("images", "cyan_square.png")).convert()
+            self.white_square = pygame.image.load(os.path.join(self.image_dir, "white_square.png")).convert()
+            self.brown_square = pygame.image.load(os.path.join(self.image_dir, "brown_square.png")).convert()
+            self.cyan_square = pygame.image.load(os.path.join(self.image_dir, "cyan_square.png")).convert()
             # "convert()" is supposed to help pygame display the images faster.  It seems to mess up transparency - makes it all black!
             # And, for this chess program, the images don't need to change that fast.
-            self.black_pawn = pygame.image.load(os.path.join("images", "blackPawn.png"))
-            self.black_rook = pygame.image.load(os.path.join("images", "blackRook.png"))
-            self.black_knight = pygame.image.load(os.path.join("images", "blackKnight.png"))
-            self.black_bishop = pygame.image.load(os.path.join("images", "blackBishop.png"))
-            self.black_king = pygame.image.load(os.path.join("images", "blackKing.png"))
-            self.black_queen = pygame.image.load(os.path.join("images", "blackQueen.png"))
-            self.white_pawn = pygame.image.load(os.path.join("images", "whitePawn.png"))
-            self.white_rook = pygame.image.load(os.path.join("images", "whiteRook.png"))
-            self.white_knight = pygame.image.load(os.path.join("images", "whiteKnight.png"))
-            self.white_bishop = pygame.image.load(os.path.join("images", "whiteBishop.png"))
-            self.white_king = pygame.image.load(os.path.join("images", "whiteKing.png"))
-            self.white_queen = pygame.image.load(os.path.join("images", "whiteQueen.png"))
+            self.black_pawn = pygame.image.load(os.path.join(self.image_dir, "blackPawn.png"))
+            self.black_rook = pygame.image.load(os.path.join(self.image_dir, "blackRook.png"))
+            self.black_knight = pygame.image.load(os.path.join(self.image_dir, "blackKnight.png"))
+            self.black_bishop = pygame.image.load(os.path.join(self.image_dir, "blackBishop.png"))
+            self.black_king = pygame.image.load(os.path.join(self.image_dir, "blackKing.png"))
+            self.black_queen = pygame.image.load(os.path.join(self.image_dir, "blackQueen.png"))
+            self.white_pawn = pygame.image.load(os.path.join(self.image_dir, "whitePawn.png"))
+            self.white_rook = pygame.image.load(os.path.join(self.image_dir, "whiteRook.png"))
+            self.white_knight = pygame.image.load(os.path.join(self.image_dir, "whiteKnight.png"))
+            self.white_bishop = pygame.image.load(os.path.join(self.image_dir, "whiteBishop.png"))
+            self.white_king = pygame.image.load(os.path.join(self.image_dir, "whiteKing.png"))
+            self.white_queen = pygame.image.load(os.path.join(self.image_dir, "whiteQueen.png"))
         elif graphicStyle == 1:
             self.square_size = 50
-            self.white_square = pygame.image.load(os.path.join("images", "white_square.png")).convert()
-            self.brown_square = pygame.image.load(os.path.join("images", "brown_square.png")).convert()
-            self.cyan_square = pygame.image.load(os.path.join("images", "cyan_square.png")).convert()
+            self.white_square = pygame.image.load(os.path.join(self.image_dir, "white_square.png")).convert()
+            self.brown_square = pygame.image.load(os.path.join(self.image_dir, "brown_square.png")).convert()
+            self.cyan_square = pygame.image.load(os.path.join(self.image_dir, "cyan_square.png")).convert()
 
-            self.black_pawn = pygame.image.load(os.path.join("images", "Chess_tile_pd.png")).convert()
+            self.black_pawn = pygame.image.load(os.path.join(self.image_dir, "Chess_tile_pd.png")).convert()
             self.black_pawn = pygame.transform.scale(self.black_pawn, (self.square_size, self.square_size))
-            self.black_rook = pygame.image.load(os.path.join("images", "Chess_tile_rd.png")).convert()
+            self.black_rook = pygame.image.load(os.path.join(self.image_dir, "Chess_tile_rd.png")).convert()
             self.black_rook = pygame.transform.scale(self.black_rook, (self.square_size, self.square_size))
-            self.black_knight = pygame.image.load(os.path.join("images", "Chess_tile_nd.png")).convert()
+            self.black_knight = pygame.image.load(os.path.join(self.image_dir, "Chess_tile_nd.png")).convert()
             self.black_knight = pygame.transform.scale(self.black_knight, (self.square_size, self.square_size))
-            self.black_bishop = pygame.image.load(os.path.join("images", "Chess_tile_bd.png")).convert()
+            self.black_bishop = pygame.image.load(os.path.join(self.image_dir, "Chess_tile_bd.png")).convert()
             self.black_bishop = pygame.transform.scale(self.black_bishop, (self.square_size, self.square_size))
-            self.black_king = pygame.image.load(os.path.join("images", "Chess_tile_kd.png")).convert()
+            self.black_king = pygame.image.load(os.path.join(self.image_dir, "Chess_tile_kd.png")).convert()
             self.black_king = pygame.transform.scale(self.black_king, (self.square_size, self.square_size))
-            self.black_queen = pygame.image.load(os.path.join("images", "Chess_tile_qd.png")).convert()
+            self.black_queen = pygame.image.load(os.path.join(self.image_dir, "Chess_tile_qd.png")).convert()
             self.black_queen = pygame.transform.scale(self.black_queen, (self.square_size, self.square_size))
 
-            self.white_pawn = pygame.image.load(os.path.join("images", "Chess_tile_pl.png")).convert()
+            self.white_pawn = pygame.image.load(os.path.join(self.image_dir, "Chess_tile_pl.png")).convert()
             self.white_pawn = pygame.transform.scale(self.white_pawn, (self.square_size, self.square_size))
-            self.white_rook = pygame.image.load(os.path.join("images", "Chess_tile_rl.png")).convert()
+            self.white_rook = pygame.image.load(os.path.join(self.image_dir, "Chess_tile_rl.png")).convert()
             self.white_rook = pygame.transform.scale(self.white_rook, (self.square_size, self.square_size))
-            self.white_knight = pygame.image.load(os.path.join("images", "Chess_tile_nl.png")).convert()
+            self.white_knight = pygame.image.load(os.path.join(self.image_dir, "Chess_tile_nl.png")).convert()
             self.white_knight = pygame.transform.scale(self.white_knight, (self.square_size, self.square_size))
-            self.white_bishop = pygame.image.load(os.path.join("images", "Chess_tile_bl.png")).convert()
+            self.white_bishop = pygame.image.load(os.path.join(self.image_dir, "Chess_tile_bl.png")).convert()
             self.white_bishop = pygame.transform.scale(self.white_bishop, (self.square_size, self.square_size))
-            self.white_king = pygame.image.load(os.path.join("images", "Chess_tile_kl.png")).convert()
+            self.white_king = pygame.image.load(os.path.join(self.image_dir, "Chess_tile_kl.png")).convert()
             self.white_king = pygame.transform.scale(self.white_king, (self.square_size, self.square_size))
-            self.white_queen = pygame.image.load(os.path.join("images", "Chess_tile_ql.png")).convert()
+            self.white_queen = pygame.image.load(os.path.join(self.image_dir, "Chess_tile_ql.png")).convert()
             self.white_queen = pygame.transform.scale(self.white_queen, (self.square_size, self.square_size))
 
     def ConvertToScreenCoords(self, chessSquareTuple):
@@ -193,7 +194,6 @@ class ChessGUI_pygame:
         pygame.display.flip()
 
     def EndGame(self, board):
-        self.PrintMessage("Press any key to exit.")
         self.Draw(board)  # draw board to show end game status
         pygame.event.set_blocked(MOUSEMOTION)
         while 1:
@@ -205,7 +205,7 @@ class ChessGUI_pygame:
                 pygame.quit()
                 sys.exit(0)
 
-    def GetPlayerInput(self, board, currentColor):
+    def GetPlayerInput(self, board, legal_moves):
         # returns ((from_row,from_col),(to_row,to_col))
         fromSquareChosen = 0
         toSquareChosen = 0
@@ -213,16 +213,17 @@ class ChessGUI_pygame:
             squareClicked = []
             pygame.event.set_blocked(MOUSEMOTION)
             e = pygame.event.wait()
-            if e.type is KEYDOWN:
-                if e.key is K_ESCAPE:
+            if e.type == KEYDOWN:
+                if e.key == K_ESCAPE:
                     fromSquareChosen = 0
                     fromTuple = []
-            if e.type is MOUSEBUTTONDOWN:
+            if e.type == MOUSEBUTTONDOWN:
                 (mouseX, mouseY) = pygame.mouse.get_pos()
                 squareClicked = self.ConvertToChessCoords((mouseX, mouseY))
+                squareClicked = tuple([int(element) for element in squareClicked])
                 if squareClicked[0] < 0 or squareClicked[0] > 7 or squareClicked[1] < 0 or squareClicked[1] > 7:
                     squareClicked = []  # not a valid chess square
-            if e.type is QUIT:  # the "x" kill button
+            if e.type == QUIT:  # the "x" kill button
                 pygame.quit()
                 sys.exit(0)
 
@@ -230,41 +231,27 @@ class ChessGUI_pygame:
                 self.Draw(board)
                 if squareClicked != []:
                     (r, c) = squareClicked
-                    if currentColor == 'black' and 'b' in board[r][c]:
-                        if len(self.Rules.GetListOfValidMoves(board, currentColor, squareClicked)) > 0:
-                            fromSquareChosen = 1
-                            fromTuple = squareClicked
-                    elif currentColor == 'white' and 'w' in board[r][c]:
-                        if len(self.Rules.GetListOfValidMoves(board, currentColor, squareClicked)) > 0:
-                            fromSquareChosen = 1
-                            fromTuple = squareClicked
+                    r = int(r)
+                    c = int(c)
+                    legal = False
+                    possibleDestinations = []
+                    for i in legal_moves:
+                        if i[0] == squareClicked:
+                            legal = True
+                            possibleDestinations.append(i[1])
+                    if legal:
+                        fromSquareChosen = 1
+                        fromTuple = squareClicked
 
             elif fromSquareChosen and not toSquareChosen:
-                possibleDestinations = self.Rules.GetListOfValidMoves(board, currentColor, fromTuple)
                 self.Draw(board, possibleDestinations)
                 if squareClicked != []:
-                    (r, c) = squareClicked
                     if squareClicked in possibleDestinations:
                         toSquareChosen = 1
                         toTuple = squareClicked
-                    elif currentColor == 'black' and 'b' in board[r][c]:
-                        if squareClicked == fromTuple:
-                            fromSquareChosen = 0
-                        elif len(self.Rules.GetListOfValidMoves(board, currentColor, squareClicked)) > 0:
-                            fromSquareChosen = 1
-                            fromTuple = squareClicked
-                        else:
-                            fromSquareChosen = 0  # piece is of own color, but no possible moves
-                    elif currentColor == 'white' and 'w' in board[r][c]:
-                        if squareClicked == fromTuple:
-                            fromSquareChosen = 0
-                        elif len(self.Rules.GetListOfValidMoves(board, currentColor, squareClicked)) > 0:
-                            fromSquareChosen = 1
-                            fromTuple = squareClicked
-                        else:
-                            fromSquareChosen = 0
                     else:  # blank square or opposite color piece not in possible destinations clicked
                         fromSquareChosen = 0
+                        possibleDestinations = []
 
         return (fromTuple, toTuple)
 
@@ -306,6 +293,6 @@ if __name__ == "__main__":
 
     validSquares = [(5, 2), (1, 1), (1, 5), (7, 6)]
 
-    game = ChessGUI_pygame()
-    game.Draw(testBoard, validSquares)
+    game = DraughtsGUI_pygame()
+    game.Draw(testBoard)
     game.TestRoutine()

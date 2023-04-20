@@ -1,5 +1,6 @@
 import os
 from functools import partial
+from itertools import cycle
 
 import PySimpleGUI as sg
 import numpy as np
@@ -8,6 +9,7 @@ from tf_agents.environments import TFPyEnvironment
 
 from src.modules.draughts.draughtsGUI_pygame import DraughtsGUI_pygame
 from src.modules.draughts.draughts_environment import DraughtsEnvironment
+from src.modules.env_flags import REWARD_NOT_PASSED, REWARD_ILLEGAL_MOVE
 from src.play.human_agent import HumanAgent
 from src.train.multi_agent import MultiDQNAgent
 from src.train.network import MaskedNetwork
@@ -45,7 +47,6 @@ def play():
     env = DraughtsEnvironment()
 
     tf_env = TFPyEnvironment(env)
-    tf_env.reset()
 
     if values['-PLAYER1-']:
         ai_player = 2
@@ -60,7 +61,7 @@ def play():
         name='Player1QNet'
     )
 
-    player_ai = MultiDQNAgent(
+    agent_ai = MultiDQNAgent(
         tf_env,
         action_spec=tf_env.action_spec()['position'],
         action_fn=partial(action_fn, ai_player),
@@ -68,9 +69,9 @@ def play():
         q_network=temp_q_net
     )
 
-    player_ai.set_policy(saved_policy)
+    agent_ai.set_policy(saved_policy)
 
-    player_human = HumanAgent(
+    agent_human = HumanAgent(
         tf_env,
         action_spec=tf_env.action_spec()['position'],
         action_fn=partial(action_fn, human_player),
@@ -78,14 +79,51 @@ def play():
     )
 
     gui = DraughtsGUI_pygame(image_dir=os.path.join('..', 'modules', 'draughts', 'images'))
-    board_state = tf_env.render().numpy()
 
-    board_str = board_state.astype(str)
+    if human_player == 1:
+        players = cycle([agent_human, agent_ai])
+    else:
+        players = cycle([agent_ai, agent_human])
 
-    board_str[board_state == 0] = 'e'
-    board_str[board_state == 1] = 'wP'
-    board_str[board_state == 2] = 'bP'
+    ts = tf_env.reset()
 
-    board_str = np.squeeze(board_str).tolist()
+    reward = None
+    player = None
+    while not ts.is_last():
+        board_state = np.squeeze(tf_env.render().numpy())
+        board_str = board_state.astype(str)
+        board_str[board_state == 0] = 'e'
+        board_str[board_state == 1] = 'wP'
+        board_str[board_state == 2] = 'bP'
+        board_str = board_str.tolist()
+        gui.Draw(board_str)
 
-    print(gui.GetPlayerInput(board_str, 'white'))
+        if reward not in [REWARD_NOT_PASSED, REWARD_ILLEGAL_MOVE]:
+            player = next(players)
+
+        if player == agent_human:
+            legal_moves = []
+            mask = env.get_legal_moves(board_state, human_player)
+            for n in range(len(mask)):
+                if mask[n] == 1:
+                    position_index = n // 64
+                    move_index = n % 64
+                    position = (position_index // 8, position_index % 8)
+                    move = (move_index // 8, move_index % 8)
+                    legal_moves.append((position, move))
+
+            player_move = gui.GetPlayerInput(board_str, legal_moves)
+            position = player_move[0]
+            move = player_move[1]
+            position_flat = (position[0] * 8) + position[1]
+            move_flat = (move[0] * 8) + move[1]
+            human_action = tf.convert_to_tensor((position_flat * 64) + move_flat)
+
+            _, reward = agent_human.act(human_action)
+            print(reward)
+
+        else:
+            _, reward = player.act()
+            print(reward)
+        ts = tf_env.current_time_step()
+    return True

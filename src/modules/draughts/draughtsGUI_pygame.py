@@ -36,7 +36,7 @@ class DraughtsGUI_pygame:
 		os.environ['SDL_VIDEO_CENTERED'] = '1'  # should center pygame window on the screen
 		pygame.init()
 		pygame.display.init()
-		self.screen = pygame.display.set_mode((850, 500))
+		self.screen = pygame.display.set_mode((500, 500))
 		self.boardStart_x = 50
 		self.boardStart_y = 50
 		pygame.display.set_caption('Python Chess')
@@ -205,31 +205,25 @@ class DraughtsGUI_pygame:
 				pygame.quit()
 				sys.exit(0)
 
-	def GetPlayerInput(self, board, currentColor):
+	def GetPlayerInput(self, board, legal_moves):
 		# returns ((from_row,from_col),(to_row,to_col))
 		fromSquareChosen = 0
 		toSquareChosen = 0
-		print('getting player input')
 		while not fromSquareChosen or not toSquareChosen:
 			squareClicked = []
 			pygame.event.set_blocked(MOUSEMOTION)
-			print('waiting for event')
 			e = pygame.event.wait()
-			print(e.type, MOUSEBUTTONDOWN)
 			if e.type == KEYDOWN:
-				print('keydown')
 				if e.key == K_ESCAPE:
-					print('escape')
 					fromSquareChosen = 0
 					fromTuple = []
 			if e.type == MOUSEBUTTONDOWN:
-				print('mouse button')
 				(mouseX, mouseY) = pygame.mouse.get_pos()
 				squareClicked = self.ConvertToChessCoords((mouseX, mouseY))
+				squareClicked = tuple([int(element) for element in squareClicked])
 				if squareClicked[0] < 0 or squareClicked[0] > 7 or squareClicked[1] < 0 or squareClicked[1] > 7:
 					squareClicked = []  # not a valid chess square
 			if e.type == QUIT:  # the "x" kill button
-				print('quit')
 				pygame.quit()
 				sys.exit(0)
 
@@ -239,41 +233,25 @@ class DraughtsGUI_pygame:
 					(r, c) = squareClicked
 					r = int(r)
 					c = int(c)
-					if currentColor == 'black' and 'b' in board[r][c]:
-						if len(self.Rules.GetListOfValidMoves(board, currentColor, squareClicked)) > 0:
-							fromSquareChosen = 1
-							fromTuple = squareClicked
-					elif currentColor == 'white' and 'w' in board[r][c]:
-						if len(self.Rules.GetListOfValidMoves(board, currentColor, squareClicked)) > 0:
-							fromSquareChosen = 1
-							fromTuple = squareClicked
+					legal = False
+					possibleDestinations = []
+					for i in legal_moves:
+						if i[0] == squareClicked:
+							legal = True
+							possibleDestinations.append(i[1])
+					if legal:
+						fromSquareChosen = 1
+						fromTuple = squareClicked
 
 			elif fromSquareChosen and not toSquareChosen:
-				possibleDestinations = self.Rules.GetListOfValidMoves(board, currentColor, fromTuple)
 				self.Draw(board, possibleDestinations)
 				if squareClicked != []:
-					(r, c) = squareClicked
 					if squareClicked in possibleDestinations:
 						toSquareChosen = 1
 						toTuple = squareClicked
-					elif currentColor == 'black' and 'b' in board[r][c]:
-						if squareClicked == fromTuple:
-							fromSquareChosen = 0
-						elif len(self.Rules.GetListOfValidMoves(board, currentColor, squareClicked)) > 0:
-							fromSquareChosen = 1
-							fromTuple = squareClicked
-						else:
-							fromSquareChosen = 0  # piece is of own color, but no possible moves
-					elif currentColor == 'white' and 'w' in board[r][c]:
-						if squareClicked == fromTuple:
-							fromSquareChosen = 0
-						elif len(self.Rules.GetListOfValidMoves(board, currentColor, squareClicked)) > 0:
-							fromSquareChosen = 1
-							fromTuple = squareClicked
-						else:
-							fromSquareChosen = 0
 					else:  # blank square or opposite color piece not in possible destinations clicked
 						fromSquareChosen = 0
+						possibleDestinations = []
 
 		return (fromTuple, toTuple)
 
