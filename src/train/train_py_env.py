@@ -168,19 +168,26 @@ def p2_reward_fn(ts: TimeStep) -> float:
 
 
 if __name__ == "__main__":
+
     num_iterations = 4000
     initial_collect_episodes = 5
     episodes_per_iteration = 5
     train_steps_per_iteration = 1
     training_batch_size = 512
     training_num_steps = 2
-    replay_buffer_size = 5 * episodes_per_iteration * 4096
-    learning_rate = 1e-5
+    replay_buffer_size = 5 * episodes_per_iteration * 4098
     plot_interval = 1000
 
     iteration = 1
     games = []
     loss_infos = []
+
+    learning_rate = tf.compat.v1.train.exponential_decay(
+        learning_rate=1e-5,
+        global_step=iteration,
+        decay_steps=400,
+        decay_rate=0.9
+    )
 
     gpus = tf.config.experimental.list_physical_devices('GPU')
     if gpus:
@@ -202,20 +209,28 @@ if __name__ == "__main__":
     match request:
         case 1:
             env = TicTacToeMultiAgentEnv()
-            checkpoint_dir = os.path.join('..', 'models', 'tictactoe')
+            checkpoint_dir = os.path.join('..', 'models', 'tictactoe', 'checkpoint')
+            policy_dir = os.path.join('..', 'models', 'tictactoe', 'saved')
             data_title = 'Tic Tac Toe Policy Training'
+            replay_buffer_size = 4 * episodes_per_iteration * 10
         case 2:
             env = DraughtsEnvironment()
-            checkpoint_dir = os.path.join('..', 'models', 'draughts')
+            checkpoint_dir = os.path.join('..', 'models', 'draughts', 'checkpoint')
+            policy_dir = os.path.join('..', 'models', 'draughts', 'saved')
             data_title = 'Draughts Policy Training'
+            replay_buffer_size = 6 * episodes_per_iteration * 4096
         case 3:
             env = ChessEnvironment()
-            checkpoint_dir = os.path.join('..', 'models', 'chess')
+            checkpoint_dir = os.path.join('..', 'models', 'chess', 'checkpoint')
+            policy_dir = os.path.join('..', 'models', 'chess', 'saved')
             data_title = 'Chess Policy Training'
+            replay_buffer_size = 15 * episodes_per_iteration * 4098
         case _:
             env = GoEnvironment()
-            checkpoint_dir = os.path.join('..', 'models', 'go')
+            checkpoint_dir = os.path.join('..', 'models', 'go', 'checkpoint')
+            policy_dir = os.path.join('..', 'models', 'go', 'saved')
             data_title = 'Go Policy Training'
+            replay_buffer_size = 4 * episodes_per_iteration * 361
 
     tf_env = TFPyEnvironment(env)
 
@@ -272,6 +287,10 @@ if __name__ == "__main__":
     policy_checkpointer_2 = common.Checkpointer(ckpt_dir=os.path.join(checkpoint_dir, 'player_2'),
                                                 policy=player_2.policy)
 
+    policy_saver_1 = policy_saver.PolicySaver(player_1.policy)
+
+    policy_saver_2 = policy_saver.PolicySaver(player_2.policy)
+
     print('Collecting Initial Training Sample...')
     for _ in range(initial_collect_episodes):
         training_episode(tf_env, player_1, player_2)
@@ -286,6 +305,8 @@ if __name__ == "__main__":
         print('iteration: ', iteration, ' completed')
         iteration += 1
         if iteration % plot_interval == 0:
+            policy_saver_1.save(os.path.join(policy_dir, 'player_1'))
+            policy_saver_2.save(os.path.join(policy_dir, 'player_2'))
             policy_checkpointer_1.save(global_step=global_step_1)
             policy_checkpointer_2.save(global_step=global_step_2)
             plot_history()

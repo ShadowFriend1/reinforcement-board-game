@@ -1,4 +1,7 @@
+from typing import Text, Optional
+
 import numpy as np
+from tf_agents.typing import types
 
 from .tic_tac_toe_environment import TicTacToeEnvironment
 from tf_agents.specs import BoundedArraySpec
@@ -103,3 +106,6 @@ class TicTacToeMultiAgentEnv(TicTacToeEnvironment):
         table_str = table_str.replace('1', 'X')
         table_str = table_str.replace('2', 'O')
         print(table_str)
+
+    def render(self, mode: Text = 'rgb_array') -> Optional[types.NestedArray]:
+        return np.copy(self._states)

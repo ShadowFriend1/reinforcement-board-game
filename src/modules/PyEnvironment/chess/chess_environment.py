@@ -1,10 +1,13 @@
 import copy
+from typing import Text, Optional
+
 import numpy as np
 
 from tf_agents.environments import py_environment
 from tf_agents.specs import BoundedArraySpec
 from tf_agents.trajectories.time_step import StepType
 from tf_agents.trajectories.time_step import TimeStep
+from tf_agents.typing import types
 
 from ..env_flags import REWARD_ILLEGAL_MOVE, REWARD_LOSS, REWARD_WIN, REWARD_DRAW_OR_NOT_FINAL
 
@@ -315,6 +318,8 @@ class ChessEnvironment(py_environment.PyEnvironment):
         return False
 
     def check_legal(self, state, position, move, player, check_check=True):
+        if 8 in [position[0], position[1], move[0], move[1]]:
+            return False
         if self.check_legal_move(state, position, move, player):
             if not check_check:
                 return True
@@ -386,15 +391,16 @@ class ChessEnvironment(py_environment.PyEnvironment):
 
         if (castle is not None) and self.check_legal_castle(self._states, castle, action['value']):
             self._states = self.castle(self._states, castle, action['value'])
-        elif (self.check_legal_move(self._states, position, move, action['value'])) and (castle is None):
-            next_state = self.move(self._states, position, move, action['value'])
-            if (self._states[position] in [self.PAWN_W, self.PAWN_B]) and (abs(move[0] - position[0]) == 2):
-                self._double_move = move[1]
-            else:
-                self._double_move = 9
-            if position not in self._moved:
-                self._moved.append(position)
-            self._states = next_state
+        elif castle is None:
+            if self.check_legal_move(self._states, position, move, action['value']):
+                next_state = self.move(self._states, position, move, action['value'])
+                if (self._states[position] in [self.PAWN_W, self.PAWN_B]) and (abs(move[0] - position[0]) == 2):
+                    self._double_move = move[1]
+                else:
+                    self._double_move = 9
+                if position not in self._moved:
+                    self._moved.append(position)
+                self._states = next_state
         else:
             illegal = True
 
@@ -497,12 +503,15 @@ class ChessEnvironment(py_environment.PyEnvironment):
         table_str = table_str.replace('12', 'BK')
         table_str = table_str.replace('0', '  ')
         table_str = table_str.replace('1', 'WP')
-        table_str = table_str.replace('2', 'WK')
+        table_str = table_str.replace('2', 'WN')
         table_str = table_str.replace('3', 'WB')
         table_str = table_str.replace('4', 'WR')
         table_str = table_str.replace('5', 'WQ')
         table_str = table_str.replace('6', 'WK')
         table_str = table_str.replace('7', 'BP')
-        table_str = table_str.replace('8', 'BK')
+        table_str = table_str.replace('8', 'BN')
         table_str = table_str.replace('9', 'BB')
         print(table_str)
+
+    def render(self, mode: Text = 'rgb_array') -> Optional[types.NestedArray]:
+        return np.copy(self._states)

@@ -7,6 +7,7 @@ from tf_agents.environments import py_environment
 from tf_agents.specs import BoundedArraySpec
 from tf_agents.trajectories.time_step import StepType
 from tf_agents.trajectories.time_step import TimeStep
+from tf_agents.typing import types
 
 from ..env_flags import REWARD_ILLEGAL_MOVE, REWARD_LOSS, REWARD_WIN, REWARD_DRAW_OR_NOT_FINAL, REWARD_NOT_PASSED
 
@@ -277,3 +278,6 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
         {} | {} | {} | {} | {} | {} | {} | {}
         '''.format(*tuple(self.get_state().observation['state'].flatten()))
         print(table_str)
+
+    def render(self, mode: Text = 'rgb_array') -> Optional[types.NestedArray]:
+        return np.copy(self._states)
