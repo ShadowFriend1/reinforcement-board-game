@@ -1,0 +1,16 @@
+model_checkpoint_path: "ckpt-4000"
+all_model_checkpoint_paths: "ckpt-100"
+all_model_checkpoint_paths: "ckpt-200"
+all_model_checkpoint_paths: "ckpt-300"
+all_model_checkpoint_paths: "ckpt-1000"
+all_model_checkpoint_paths: "ckpt-2000"
+all_model_checkpoint_paths: "ckpt-3000"
+all_model_checkpoint_paths: "ckpt-4000"
+all_model_checkpoint_timestamps: 1682043031.7802892
+all_model_checkpoint_timestamps: 1682043744.0500436
+all_model_checkpoint_timestamps: 1682044466.6161473
+all_model_checkpoint_timestamps: 1682049877.5390341
+all_model_checkpoint_timestamps: 1682053889.1353245
+all_model_checkpoint_timestamps: 1682059161.089996
+all_model_checkpoint_timestamps: 1682064321.5788527
+last_preserved_timestamp: 1682042447.0029862

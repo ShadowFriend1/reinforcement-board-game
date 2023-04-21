@@ -151,7 +151,8 @@ class ChessEnvironment(py_environment.PyEnvironment):
         else:
             return False
         if all(n == 0 for n in req_empty):
-            next_state = self.castle(state, left_right, player)
+            next_state = np.copy(state)
+            next_state = self.castle(next_state, left_right, player)
             if not self.check_check(next_state, player):
                 return True
         return False
@@ -200,10 +201,9 @@ class ChessEnvironment(py_environment.PyEnvironment):
                             step_val_y = 1
                         for y in range(0, y_dif, step_val_y):
                             for x in range(0, x_dif, step_val_x):
-                                if abs(y) == abs(x):
-                                    if not (position[0] + y, position[0] + x) != position:
-                                        if state[(position[0] + y, position[1] + x)] != 0:
-                                            return False
+                                if (abs(y) == abs(x)) and (x != 0):
+                                    if state[(position[0] + y, position[1] + x)] != 0:
+                                        return False
                         return True
 
                 case self.ROOK_W | self.ROOK_B:
@@ -247,10 +247,9 @@ class ChessEnvironment(py_environment.PyEnvironment):
                             step_val_y = 1
                         for y in range(0, y_dif, step_val_y):
                             for x in range(0, x_dif, step_val_x):
-                                if abs(y) == abs(x):
-                                    if not (position[0] + y, position[0] + x) != position:
-                                        if state[(position[0] + y, position[1] + x)] != 0:
-                                            return False
+                                if (abs(y) == abs(x)) and (x != 0):
+                                    if state[(position[0] + y, position[1] + x)] != 0:
+                                        return False
                         return True
 
                     elif move[0] == position[0]:
@@ -406,9 +405,9 @@ class ChessEnvironment(py_environment.PyEnvironment):
         else:
             illegal = True
 
-        if (action['value'] == 1) and (move[0] == 0):
+        if ((action['value'] == 1) and (move[0] == 0)) and (self._states[move] == self.PAWN_W):
             self._states[move] = self.QUEEN_W
-        elif (action['value'] == 2) and (move[0] == 7):
+        elif ((action['value'] == 2) and (move[0] == 7)) and (self._states[move] == self.PAWN_B):
             self._states[move] = self.QUEEN_B
 
         is_final, reward = self._check_states(action['value'])

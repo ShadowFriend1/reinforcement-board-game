@@ -114,7 +114,6 @@ def play():
         if player == agent_human:
             legal_moves = []
             mask = env.get_legal_moves(board_state, human_player)
-            print(len(mask))
             for n in range(len(mask)):
                 if (mask[n] == 1) and (n < 4096):
                     position_index = n // 64
