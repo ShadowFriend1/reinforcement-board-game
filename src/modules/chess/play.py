@@ -78,7 +78,7 @@ def play():
         name='PlayerHuman'
     )
 
-    gui = ChessGUI_pygame(image_dir=os.path.join('..', 'modules', 'chess', 'images'))
+    gui = ChessGUI_pygame(image_dir=os.path.join('.', 'modules', 'chess', 'images'))
 
     if human_player == 1:
         players = cycle([agent_human, agent_ai])
@@ -97,7 +97,7 @@ def play():
         board_str[board_state == 2] = 'wT'
         board_str[board_state == 3] = 'wB'
         board_str[board_state == 4] = 'wR'
-        board_str[board_state == 5] = 'bQ'
+        board_str[board_state == 5] = 'wQ'
         board_str[board_state == 6] = 'wK'
         board_str[board_state == 7] = 'bP'
         board_str[board_state == 8] = 'bT'
@@ -114,6 +114,7 @@ def play():
         if player == agent_human:
             legal_moves = []
             mask = env.get_legal_moves(board_state, human_player)
+            print(len(mask))
             for n in range(len(mask)):
                 if (mask[n] == 1) and (n < 4096):
                     position_index = n // 64
@@ -121,11 +122,6 @@ def play():
                     position = (position_index // 8, position_index % 8)
                     move = (move_index // 8, move_index % 8)
                     legal_moves.append((position, move))
-                elif n > 4096:
-                    if n == 4096:
-                        print('legal left castle')
-                    elif n == 4097:
-                        print('legal right castle')
 
             player_move = gui.GetPlayerInput(board_str, legal_moves)
             position = player_move[0]
@@ -135,10 +131,8 @@ def play():
             human_action = tf.convert_to_tensor((position_flat * 64) + move_flat)
 
             _, reward = agent_human.act(human_action)
-            print(reward)
 
         else:
             _, reward = player.act()
-            print(reward)
         ts = tf_env.current_time_step()
     return True

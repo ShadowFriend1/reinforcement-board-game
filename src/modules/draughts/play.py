@@ -78,7 +78,7 @@ def play():
         name='PlayerHuman'
     )
 
-    gui = DraughtsGUI_pygame(image_dir=os.path.join('..', 'modules', 'draughts', 'images'))
+    gui = DraughtsGUI_pygame(image_dir=os.path.join('.', 'modules', 'draughts', 'images'))
 
     if human_player == 1:
         players = cycle([agent_human, agent_ai])
@@ -120,10 +120,8 @@ def play():
             human_action = tf.convert_to_tensor((position_flat * 64) + move_flat)
 
             _, reward = agent_human.act(human_action)
-            print(reward)
 
         else:
             _, reward = player.act()
-            print(reward)
         ts = tf_env.current_time_step()
     return True

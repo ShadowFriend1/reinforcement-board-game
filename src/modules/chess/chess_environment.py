@@ -201,10 +201,9 @@ class ChessEnvironment(py_environment.PyEnvironment):
                         for y in range(0, y_dif, step_val_y):
                             for x in range(0, x_dif, step_val_x):
                                 if abs(y) == abs(x):
-                                    if (state[(position[0] + y, position[1] + x)] != 0) and (
-                                            ((position[0] + y, position[0] + x) != position) and
-                                            ((position[0] + y, position[1] + x) != move)):
-                                        return False
+                                    if not (position[0] + y, position[0] + x) != position:
+                                        if state[(position[0] + y, position[1] + x)] != 0:
+                                            return False
                         return True
 
                 case self.ROOK_W | self.ROOK_B:
@@ -236,6 +235,7 @@ class ChessEnvironment(py_environment.PyEnvironment):
                 case self.QUEEN_W | self.QUEEN_B:
                     x_dif = move[1] - position[1]
                     y_dif = move[0] - position[0]
+
                     if abs(x_dif) == abs(y_dif):
                         if x_dif < 0:
                             step_val_x = -1
@@ -248,11 +248,11 @@ class ChessEnvironment(py_environment.PyEnvironment):
                         for y in range(0, y_dif, step_val_y):
                             for x in range(0, x_dif, step_val_x):
                                 if abs(y) == abs(x):
-                                    if (state[(position[0] + y, position[1] + x)] != 0) and (
-                                            ((position[0] + y, position[0] + x) != position) and
-                                            ((position[0] + y, position[1] + x) != move)):
-                                        return False
+                                    if not (position[0] + y, position[0] + x) != position:
+                                        if state[(position[0] + y, position[1] + x)] != 0:
+                                            return False
                         return True
+
                     elif move[0] == position[0]:
                         if x_dif < 0:
                             step_val = -1
@@ -260,17 +260,19 @@ class ChessEnvironment(py_environment.PyEnvironment):
                             step_val = 1
                         row = move[0]
                         for x in range(0, x_dif, step_val):
-                            if (state[(row, position[1] + x)] != 0) and (((row, x) != position) and ((row, x) != move)):
+                            if (state[(row, position[1] + x)] != 0) and (((row, position[1] + x) != position) and
+                                                                         ((row, position[1] + x) != move)):
                                 return False
                         return True
-                    elif move[1] == position[1]:
+                    if move[1] == position[1]:
                         if y_dif < 0:
                             step_val = -1
                         else:
                             step_val = 1
                         col = move[1]
                         for y in range(0, y_dif, step_val):
-                            if (state[(position[0] + y, col)] != 0) and (((y, col) != position) and ((y, col) != move)):
+                            if (state[(position[0] + y, col)] != 0) and (((position[0] + y, col) != position) and
+                                                                         ((position[0] + y, col) != move)):
                                 return False
                         return True
 

@@ -165,15 +165,14 @@ def p2_reward_fn(ts: TimeStep) -> float:
 
 
 if __name__ == "__main__":
-
-    num_iterations = 1000
+    num_iterations = 4000
     initial_collect_episodes = 5
     episodes_per_iteration = 5
     train_steps_per_iteration = 1
     training_batch_size = 512
     training_num_steps = 2
     replay_buffer_size = 5 * episodes_per_iteration * 4098
-    plot_interval = 100
+    plot_interval = 1000
 
     iteration = 1
     games = []
