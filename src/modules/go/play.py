@@ -1,4 +1,5 @@
 import os
+import string
 from functools import partial
 from itertools import cycle
 
@@ -79,8 +80,6 @@ def play():
         name='PlayerHuman'
     )
 
-    gui = DraughtsGUI_pygame(image_dir=os.path.join('.', 'modules', 'draughts', 'images'))
-
     if human_player == 1:
         players = cycle([agent_human, agent_ai])
     else:
@@ -92,12 +91,50 @@ def play():
     player = None
     while not ts.is_last():
         board_state = np.squeeze(tf_env.render().numpy())
-        board_str = board_state.astype(str)
-        board_str[board_state == 0] = 'e'
-        board_str[board_state == 1] = 'wP'
-        board_str[board_state == 2] = 'bP'
-        board_str = board_str.tolist()
-        gui.Draw(board_str)
+        table_str = '''
+                  a | b | c | d | e | f | g | h | i | j | k | l | m | n | o | p | q | r | s
+                a {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                - - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+                b {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                - - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+                c {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                - - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+                d {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                - - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+                e {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                - - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+                f {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                - - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+                g {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                - - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+                h {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                - - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+                i {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                - - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+                j {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                - - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+                k {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                - - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+                l {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                - - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+                m {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                - - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+                n {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                - - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+                o {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                - - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+                p {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                - - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+                q {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                - - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+                r {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                - - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+                s {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {}
+                '''.format(*tuple(board_state.flatten()))
+        table_str = table_str.replace('0', ' ')
+        table_str = table_str.replace('1', 'B')
+        table_str = table_str.replace('2', 'W')
+        print(table_str)
 
         if reward not in [REWARD_NOT_PASSED, REWARD_ILLEGAL_MOVE]:
             player = next(players)
@@ -107,23 +144,32 @@ def play():
             mask = env.get_legal_moves(board_state, human_player)
             for n in range(len(mask)):
                 if mask[n] == 1:
-                    position_index = n // 64
-                    move_index = n % 64
-                    position = (position_index // 8, position_index % 8)
-                    move = (move_index // 8, move_index % 8)
-                    legal_moves.append((position, move))
+                    position = (n // 19, n % 19)
+                    legal_moves.append(position)
+            legal = False
+            choice = (19, 0)
+            while not legal:
+                choice = input("Input a move in the format row, column e.g. (a, g) or pass by typing pass")
+                if choice == 'pass':
+                    choice = (19, 0)
+                    legal = True
+                else:
+                    try:
+                        choice = tuple(choice.split(', '))
+                        choice = (string.ascii_lowercase.index(choice[0]), string.ascii_lowercase.index(choice[1]))
+                        if choice in legal_moves:
+                            legal = True
+                        else:
+                            print('not a legal move')
+                    except (ValueError, IndexError):
+                        print('not a legal move')
 
-            player_move = gui.GetPlayerInput(board_str, legal_moves)
-            position = player_move[0]
-            move = player_move[1]
-            position_flat = (position[0] * 8) + position[1]
-            move_flat = (move[0] * 8) + move[1]
-            human_action = tf.convert_to_tensor((position_flat * 64) + move_flat)
+            position_flat = (choice[0] * 19) + choice[1]
+            human_action = tf.convert_to_tensor(position_flat)
 
             _, reward = agent_human.act(human_action)
 
         else:
             _, reward = player.act()
         ts = tf_env.current_time_step()
-    gui.close()
     return True
