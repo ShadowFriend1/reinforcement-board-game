@@ -11,7 +11,8 @@ import tensorflow as tf
 from tf_agents.environments import TFPyEnvironment
 
 from src.modules.draughts.draughtsGUI_pygame import DraughtsGUI_pygame
-from src.modules.env_flags import REWARD_NOT_PASSED, REWARD_ILLEGAL_MOVE
+from src.modules.env_flags import REWARD_NOT_PASSED, REWARD_ILLEGAL_MOVE, REWARD_WIN, REWARD_LOSS, \
+    REWARD_DRAW_OR_NOT_FINAL
 from src.modules.tic_tac_toe.tic_tac_toe_multi import TicTacToeMultiAgentEnv
 from src.play.human_agent import HumanAgent
 from src.train.multi_agent import MultiDQNAgent
@@ -45,18 +46,21 @@ def game_initiating_window(screen, initiating_window, width, height, winner):
     pg.draw.line(screen, line_color, (0, height / 3), (width, height / 3), 7)
     pg.draw.line(screen, line_color, (0, height / 3 * 2),
                  (width, height / 3 * 2), 7)
-    draw_status(winner, screen, width)
+    draw_status(winner, screen, width, 1, False)
 
 
-def draw_status(winner, screen, width):
+def draw_status(winner, screen, width, player, draw):
     # getting the global variable draw
     # into action
-    global draw
+    if player == 1:
+        XO = 'x'
+    else:
+        XO = 'o'
 
     if winner is None:
         message = XO.upper() + "'s Turn"
     else:
-        message = winner.upper() + " won !"
+        message = XO.upper() + " won !"
     if draw:
         message = "Game Draw !"
 
@@ -74,7 +78,7 @@ def draw_status(winner, screen, width):
     screen.blit(text, text_rect)
     pg.display.update()
 
-def drawXO(row, col, width, height, screen, x_img, o_img, board, player):
+def drawXO(row, col, width, height, screen, x_img, o_img, player):
 
     # for the first row, the image
     # should be pasted at a x coordinate
@@ -102,46 +106,42 @@ def drawXO(row, col, width, height, screen, x_img, o_img, board, player):
     if col == 3:
         posy = height / 3 * 2 + 30
 
-    # setting up the required board
-    # value to display
-    board[row - 1][col - 1] = player
-
     if player == 2:
         # pasting x_img over the screen
         # at a coordinate position of
         # (pos_y, posx) defined in the
         # above code
-        screen.blit(x_img, (posy, posx))
-    else:
         screen.blit(o_img, (posy, posx))
+    else:
+        screen.blit(x_img, (posy, posx))
     pg.display.update()
 
 
-def user_click(width, height, screen, x_img, o_img):
+def user_click(width, height, board):
     # get coordinates of mouse click
     x, y = pg.mouse.get_pos()
 
     # get column of mouse click (1-3)
-    if (x < width / 3):
+    if x < width / 3:
         col = 1
 
-    elif (x < width / 3 * 2):
+    elif x < width / 3 * 2:
         col = 2
 
-    elif (x < width):
+    elif x < width:
         col = 3
 
     else:
         col = None
 
     # get row of mouse click (1-3)
-    if (y < height / 3):
+    if y < height / 3:
         row = 1
 
-    elif (y < height / 3 * 2):
+    elif y < height / 3 * 2:
         row = 2
 
-    elif (y < height):
+    elif y < height:
         row = 3
 
     else:
@@ -150,9 +150,8 @@ def user_click(width, height, screen, x_img, o_img):
     # after getting the row and col,
     # we need to draw the images at
     # the desired positions
-    if (row and col and board[row - 1][col - 1] is None):
-        global XO
-        drawXO(row, col, width, height, screen, x_img, o_img)
+    if row and col and board[row - 1][col - 1] is None:
+        return row - 1, col - 1
 
 def play():
     layout = [[sg.Text('Choose whether to play 1st or 2nd')],
@@ -222,8 +221,6 @@ def play():
     else:
         players = cycle([agent_ai, agent_human])
 
-    gui = DraughtsGUI_pygame(image_dir=os.path.join('.', 'modules', 'draughts', 'images'))
-
     ts = tf_env.reset()
 
     # sets up a display window with pygame and renders the board state
@@ -256,30 +253,96 @@ def play():
 
     reward = None
     player = None
+    current_player = 1
     while not ts.is_last():
+        draw_status(None, screen, width, current_player, False)
+
         board_state = np.squeeze(tf_env.render().numpy())
+
+        board_str = []
+
+        for y in range(len(board_state)):
+            row = []
+            for x in range(len(board_state[0])):
+                match board_state[y, x]:
+                    case 0:
+                        row.append(None)
+                    case 1:
+                        row.append('x')
+                    case 2:
+                        row.append('o')
+            board_str.append(row)
+
+        for y in range(len(board_str)):
+            for x in range(len(board_str)):
+                if board_str[y][x] == 'x':
+                    drawXO(y + 1, x + 1, width, height, screen, x_img, o_img, 1)
+                elif board_str[y][x] == 'o':
+                    drawXO(y + 1, x + 1, width, height, screen, x_img, o_img, 2)
 
         if reward not in [REWARD_NOT_PASSED, REWARD_ILLEGAL_MOVE]:
             player = next(players)
 
         if player == agent_human:
-            while True:
+            moved = False
+            while not moved:
                 for event in pg.event.get():
                     if event.type == QUIT:
                         pg.quit()
-                    if event.type is MOUSEBUTTONDOWN:
-                        user_click(width, height, screen, x_img, o_img)
-
-                        mask = env.get_legal_actions(board_state)
-
-            position = player_move[0]
-            position_flat = (position[0] * 8) + position[1]
-            human_action = tf.convert_to_tensor((position_flat * 64) + move_flat)
-
+                        return True
+                    if event.type == MOUSEBUTTONDOWN:
+                        move = user_click(width, height, board_str)
+                        if move is not None:
+                            print(move)
+                            move_flat = (move[0] * 3) + move[1]
+                            human_action = tf.convert_to_tensor(move_flat)
+                            moved = True
             _, reward = agent_human.act(human_action)
 
         else:
             _, reward = player.act()
+
+        if current_player == 1:
+            current_player = 2
+        else:
+            current_player = 1
+
         ts = tf_env.current_time_step()
-    gui.close()
-    return True
+
+    if reward == REWARD_DRAW_OR_NOT_FINAL:
+        draw_status(None, screen, width, current_player, True)
+    else:
+        if current_player == 1:
+            current_player = 2
+        else:
+            current_player = 1
+        draw_status(current_player, screen, width, current_player, False)
+
+    board_state = np.squeeze(tf_env.render().numpy())
+
+    board_str = []
+
+    for y in range(len(board_state)):
+        row = []
+        for x in range(len(board_state[0])):
+            match board_state[y, x]:
+                case 0:
+                    row.append(None)
+                case 1:
+                    row.append('x')
+                case 2:
+                    row.append('o')
+        board_str.append(row)
+
+    for y in range(len(board_str)):
+        for x in range(len(board_str)):
+            if board_str[y][x] == 'x':
+                drawXO(y + 1, x + 1, width, height, screen, x_img, o_img, 1)
+            elif board_str[y][x] == 'o':
+                drawXO(y + 1, x + 1, width, height, screen, x_img, o_img, 2)
+
+    while True:
+        for event in pg.event.get():
+            if event.type == QUIT or event.type == MOUSEBUTTONDOWN or event.type == KEYDOWN:
+                pg.quit()
+                return True
