@@ -1,15 +1,7 @@
 import os
 
 import PySimpleGUI as sg
-
-
-# Import a specified module, allows for user created modules to be accessed
-def import_name(module_name, name):
-    try:
-        module = __import__(module_name, globals(), locals(), [name])
-    except ImportError:
-        return None
-    return vars(module)[name]
+from src.play.user_interface import import_name
 
 def train_gui():
     layout = [[sg.Text("Choose A Game Environment")],

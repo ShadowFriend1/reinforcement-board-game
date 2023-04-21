@@ -114,7 +114,7 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
                 if (0 <= move[0] < 8) and (0 <= move[1] < 8):
                     legal, _ = self.check_legal_take(state, position, move, player)
                     if legal:
-                        return True
+                        return True, None
         return False, None
 
     def get_state(self) -> TimeStep:
