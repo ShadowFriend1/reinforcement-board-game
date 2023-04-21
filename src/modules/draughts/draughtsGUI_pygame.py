@@ -225,7 +225,6 @@ class DraughtsGUI_pygame:
 					squareClicked = []  # not a valid chess square
 			if e.type == QUIT:  # the "x" kill button
 				pygame.quit()
-				sys.exit(0)
 
 			if not fromSquareChosen and not toSquareChosen:
 				self.Draw(board)
@@ -278,6 +277,9 @@ class DraughtsGUI_pygame:
 				# x is horizontal, y is vertical
 				# (x=0,y=0) is upper-left corner of the screen
 				self.GetClickedSquare(mouseX, mouseY)
+
+	def close(self):
+		pygame.quit()
 
 
 if __name__ == "__main__":

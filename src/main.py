@@ -16,15 +16,15 @@ def app_gui():
         event, values = window.read()
         # See if user wants to quit or window was closed
         if event in ['Play against AI', 'Train Model', 'Quit']:
-            break
+            window.hide()
+            if event == 'Play against AI':
+                play_gui()
+            if event == 'Train Model':
+                train_gui()
+            window.un_hide()
         if event == sg.WINDOW_CLOSED or event == 'Quit':
             break
-
     window.close()
-    if event == 'Play against AI':
-        play_gui()
-    if event == 'Train Model':
-        train_gui()
 
 
 if __name__ == "__main__":

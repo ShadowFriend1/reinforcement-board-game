@@ -22,6 +22,7 @@ from tf_agents.trajectories.time_step import TimeStep
 from tf_agents.utils import common
 
 from src.train.network import MaskedNetwork
+import PySimpleGUI as sg
 
 sns.set()
 
@@ -164,6 +165,188 @@ def p2_reward_fn(ts: TimeStep) -> float:
     return ts.reward
 
 
+num_iterations = 4000
+initial_collect_episodes = 5
+episodes_per_iteration = 5
+train_steps_per_iteration = 1
+training_batch_size = 512
+training_num_steps = 2
+replay_buffer_size = 5 * episodes_per_iteration * 4098
+plot_interval = 1000
+
+iteration = 1
+games = []
+loss_infos = []
+
+# Trains a model according to values specified in the gui
+def train_model(
+        env_class,
+        save_dir,
+        replay_buffer_size_par,
+        num_iterations_par=4000,
+        initial_collect_episodes_par=5,
+        episodes_per_iteration_par=5,
+        train_steps_per_iteration_par=1,
+        training_batch_size_par=512,
+        training_num_steps_par=2,
+        plot_interval_par=1000,
+        learning_rate_par=1e-5,
+        learn_exp_decay=False,
+        decay_step_par=400,
+        decay_rate_par=0.9
+):
+    global num_iterations
+    global initial_collect_episodes
+    global episodes_per_iteration
+    global train_steps_per_iteration
+    global training_batch_size
+    global training_num_steps
+    global replay_buffer_size
+    global plot_interval
+    num_iterations = num_iterations_par
+    initial_collect_episodes = initial_collect_episodes_par
+    episodes_per_iteration = episodes_per_iteration_par
+    train_steps_per_iteration = train_steps_per_iteration_par
+    training_batch_size = training_batch_size_par
+    training_num_steps = training_num_steps_par
+    plot_interval = plot_interval_par
+
+    global iteration
+    global games
+    global loss_infos
+    iteration = 1
+    games = []
+    loss_infos = []
+
+    # exponential learning rate make the learning rate decrease over time
+    if learn_exp_decay:
+        learning_rate = tf.compat.v1.train.exponential_decay(
+            learning_rate=learning_rate_par,
+            global_step=iteration,
+            decay_steps=decay_step_par,
+            decay_rate=decay_rate_par
+        )
+    else:
+        learning_rate = learning_rate_par
+
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    if gpus:
+        try:
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+                logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+                print(len(gpus), "Physical GPUS,", len(logical_gpus), "Logical GPUS")
+        except RuntimeError as e:
+            print(e)
+
+    env = env_class()
+
+    tf_env = TFPyEnvironment(env)
+
+    save_dir = save_dir
+
+    policy_dir = os.path.join(save_dir, 'saved')
+    checkpoint_dir = os.path.join(save_dir, 'checkpoint')
+
+    global data_title
+    data_title = 'Model Training'
+
+    replay_buffer_size = replay_buffer_size_par
+
+    tf_env.action_spec()
+
+    # creates agents to operate on the environment (creates 2 agents, one for player 1 and 1 for player 2)
+
+    player_1_q_network = MaskedNetwork(
+        action_spec=tf_env.action_spec()['position'],
+        observation_spec=tf_env.observation_spec(),
+        name='Player1QNet'
+    )
+
+    player_1 = MultiDQNAgent(
+        tf_env,
+        action_spec=tf_env.action_spec()['position'],
+        action_fn=partial(action_fn, 1),
+        name='Player1',
+        learning_rate=learning_rate,
+        training_batch_size=training_batch_size,
+        training_num_steps=training_num_steps,
+        replay_buffer_max_length=replay_buffer_size,
+        td_errors_loss_fn=common.element_wise_squared_loss,
+        q_network=player_1_q_network
+    )
+    player_1.initialize()
+
+    player_2_q_network = MaskedNetwork(
+        action_spec=tf_env.action_spec()['position'],
+        observation_spec=tf_env.observation_spec(),
+        name='Player2QNet'
+    )
+
+    player_2 = MultiDQNAgent(
+        tf_env,
+        action_spec=tf_env.action_spec()['position'],
+        action_fn=partial(action_fn, 2),
+        reward_fn=p2_reward_fn,
+        name='Player2',
+        learning_rate=learning_rate,
+        training_batch_size=training_batch_size,
+        training_num_steps=training_num_steps,
+        replay_buffer_max_length=replay_buffer_size,
+        td_errors_loss_fn=common.element_wise_squared_loss,
+        q_network=player_2_q_network
+    )
+    player_2.initialize()
+
+    # Saves the models policy
+
+    policy_checkpointer_1 = common.Checkpointer(ckpt_dir=os.path.join(checkpoint_dir, 'player_1'),
+                                                policy=player_1.policy)
+
+    policy_checkpointer_2 = common.Checkpointer(ckpt_dir=os.path.join(checkpoint_dir, 'player_2'),
+                                                policy=player_2.policy)
+
+    policy_saver_1 = policy_saver.PolicySaver(player_1.policy)
+
+    policy_saver_2 = policy_saver.PolicySaver(player_2.policy)
+
+    # Progress bar currently doesn't work
+    train_layout = [[sg.Button('Start Training Model')],
+                    [sg.ProgressBar(num_iterations, orientation='h', key='-PBAR-')],
+                    [sg.InputText(default_text='Training Ready...', size=(40, 1), key='-OUTPUT-', readonly=True)]]
+
+    train_window = sg.Window('Training Model', train_layout)
+
+    while True:
+        event, values = train_window.read()
+        if event == 'Start Training Model':
+            break
+
+    print('Collecting Initial Training Sample...')
+    for _ in range(initial_collect_episodes):
+        training_episode(tf_env, player_1, player_2)
+    print('Samples collected')
+
+    # runs iterations each of which consist of episode number of game in which the 2 agents play each other
+    if iteration > 1:
+        plot_history()
+        clear_output(wait=True)
+    while iteration < num_iterations:
+        collect_training_data(tf_env, player_1, player_2)
+        train(player_1, player_2)
+        print('iteration: ', iteration, ' completed')
+        iteration += 1
+        if iteration % plot_interval == 0:
+            train_window['-PBAR-'].update(current_count=iteration)
+            policy_saver_1.save(os.path.join(policy_dir, 'player_1'))
+            policy_saver_2.save(os.path.join(policy_dir, 'player_2'))
+            policy_checkpointer_1.save(global_step=tf.convert_to_tensor(iteration))
+            policy_checkpointer_2.save(global_step=tf.convert_to_tensor(iteration))
+            plot_history()
+            clear_output(wait=True)
+
+
+# used if this file is run (used for initial model training and testing
 if __name__ == "__main__":
     num_iterations = 4000
     initial_collect_episodes = 5
@@ -177,23 +360,12 @@ if __name__ == "__main__":
     iteration = 1
     games = []
     loss_infos = []
-
     learning_rate = tf.compat.v1.train.exponential_decay(
         learning_rate=1e-5,
         global_step=iteration,
         decay_steps=400,
         decay_rate=0.9
     )
-
-    gpus = tf.config.experimental.list_physical_devices('GPU')
-    if gpus:
-        try:
-            for gpu in gpus:
-                tf.config.experimental.set_memory_growth(gpu, True)
-                logical_gpus = tf.config.experimental.list_logical_devices('GPU')
-                print(len(gpus), "Physical GPUS,", len(logical_gpus), "Logical GPUS")
-        except RuntimeError as e:
-            print(e)
 
     request = None
     while request not in [1, 2, 3, 4]:

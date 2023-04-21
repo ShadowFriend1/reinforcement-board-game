@@ -111,15 +111,15 @@ class ChessEnvironment(py_environment.PyEnvironment):
         else:
             row = 0
         if left_right == 0:
-            state[(row, 2)] = state[(row, 4)]
-            state[(row, 4)] = 0
-            state[(row, 3)] = state[(row, 0)]
-            state[(row, 0)] = 0
+            next_state[(row, 2)] = next_state[(row, 4)]
+            next_state[(row, 4)] = 0
+            next_state[(row, 3)] = next_state[(row, 0)]
+            next_state[(row, 0)] = 0
         else:
-            state[(row, 6)] = state[(row, 4)]
-            state[(row, 4)] = 0
-            state[(row, 5)] = state[(row, 7)]
-            state[(row, 7)] = 0
+            next_state[(row, 6)] = next_state[(row, 4)]
+            next_state[(row, 4)] = 0
+            next_state[(row, 5)] = next_state[(row, 7)]
+            next_state[(row, 7)] = 0
         return next_state
 
     def move(self, state, position, move, player):
@@ -153,7 +153,7 @@ class ChessEnvironment(py_environment.PyEnvironment):
         if all(n == 0 for n in req_empty):
             next_state = np.copy(state)
             next_state = self.castle(next_state, left_right, player)
-            if not self.check_check(next_state, player):
+            if not self.check_check(next_state, player, no_castle=True):
                 return True
         return False
 
@@ -297,19 +297,18 @@ class ChessEnvironment(py_environment.PyEnvironment):
                         if (move[1] - position[1]) in [1, -1]:
                             if move[0] == (position[0] + 1):
                                 return True
-
                 case _:
                     return False
         return False
 
-    def check_check(self, state, player):
+    def check_check(self, state, player, no_castle=False):
         if player == 1:
             other_player = 2
             king = self.KING_W
         else:
             other_player = 1
             king = self.KING_B
-        other_moves = self.get_legal_moves(state, other_player, False)
+        other_moves = self.get_legal_moves(state, other_player, check_check=False, no_castle=no_castle)
         for n in range(len(other_moves)):
             if other_moves[n] == 1:
                 move_index = n % 64
@@ -340,12 +339,21 @@ class ChessEnvironment(py_environment.PyEnvironment):
     def set_position(self, position, value):
         self._states[position] = value
 
-    def get_legal_moves(self, state, player, check_check=True):
+    def get_legal_moves(self, state, player, check_check=True, no_castle=False):
         legal_flat = np.zeros((4098,), np.int32)
-        if self.check_legal_castle(state, 0, player):
-            legal_flat[4096] = 1
-        if self.check_legal_castle(state, 1, player):
-            legal_flat[4097] = 1
+        if not no_castle:
+            if self.check_legal_castle(state, 0, player):
+                position = (8, 0)
+                move = (0, 0)
+                position_flat = (position[0] * 8) + position[1]
+                move_flat = (move[0] * 8) + move[1]
+                legal_flat[((position_flat * 64) + move_flat)] = 1
+            if self.check_legal_castle(state, 1, player):
+                position = (8, 0)
+                move = (0, 1)
+                position_flat = (position[0] * 8) + position[1]
+                move_flat = (move[0] * 8) + move[1]
+                legal_flat[((position_flat * 64) + move_flat)] = 1
         # Loop through each position on the board checking for legal normal moves
         for y in range(len(state)):
             for x in range(len(state[0])):
@@ -387,8 +395,11 @@ class ChessEnvironment(py_environment.PyEnvironment):
         position = (position_index // 8, position_index % 8)
         move = (move_index // 8, move_index % 8)
 
-        if position_index == 64:
-            castle = move_index
+        if position == (8, 0):
+            if move == (0, 0):
+                castle = 0
+            elif move == (0, 1):
+                castle = 1
 
         if (castle is not None) and self.check_legal_castle(self._states, castle, action['value']):
             self._states = self.castle(self._states, castle, action['value'])

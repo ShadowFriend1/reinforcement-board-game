@@ -225,7 +225,6 @@ class ChessGUI_pygame:
                     squareClicked = []  # not a valid chess square
             if e.type == QUIT:  # the "x" kill button
                 pygame.quit()
-                sys.exit(0)
 
             if not fromSquareChosen and not toSquareChosen:
                 self.Draw(board)
@@ -244,15 +243,28 @@ class ChessGUI_pygame:
                         fromTuple = squareClicked
 
             elif fromSquareChosen and not toSquareChosen:
+                # implements castling
+                if fromTuple in [(7, 4), (0, 4)]:
+                    if ((8, 0), (0, 0)) in legal_moves:
+                        possibleDestinations.append((fromTuple[0], fromTuple[1] - 2))
+                    elif ((8, 0), (0, 1)) in legal_moves:
+                        possibleDestinations.append((fromTuple[0], fromTuple[1] + 2))
                 self.Draw(board, possibleDestinations)
                 if squareClicked != []:
                     if squareClicked in possibleDestinations:
                         toSquareChosen = 1
                         toTuple = squareClicked
+                        # Returns relevant from and to value to indicate castling to environment
+                        if fromTuple in [(7, 4), (0, 4)]:
+                            if toTuple == (fromTuple[0], fromTuple[1] - 2):
+                                fromTuple = (8, 0)
+                                toTuple = (0, 0)
+                            elif toTuple == (fromTuple[0], fromTuple[1] + 2):
+                                fromTuple = (8, 0)
+                                toTuple = (0, 1)
                     else:  # blank square or opposite color piece not in possible destinations clicked
                         fromSquareChosen = 0
                         possibleDestinations = []
-
         return (fromTuple, toTuple)
 
     def GetClickedSquare(self, mouseX, mouseY):
@@ -279,6 +291,9 @@ class ChessGUI_pygame:
                 # (x=0,y=0) is upper-left corner of the screen
                 self.GetClickedSquare(mouseX, mouseY)
 
+    def close(self):
+        pygame.quit()
+
 
 if __name__ == "__main__":
     # try out some development / testing stuff if this file is run directly
@@ -293,6 +308,6 @@ if __name__ == "__main__":
 
     validSquares = [(5, 2), (1, 1), (1, 5), (7, 6)]
 
-    game = DraughtsGUI_pygame()
+    game = ChessGUI_pygame()
     game.Draw(testBoard)
     game.TestRoutine()

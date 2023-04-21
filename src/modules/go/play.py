@@ -8,8 +8,8 @@ import tensorflow as tf
 from tf_agents.environments import TFPyEnvironment
 
 from src.modules.draughts.draughtsGUI_pygame import DraughtsGUI_pygame
-from src.modules.draughts.draughts_environment import DraughtsEnvironment
 from src.modules.env_flags import REWARD_NOT_PASSED, REWARD_ILLEGAL_MOVE
+from src.modules.go.go_environment import GoEnvironment
 from src.play.human_agent import HumanAgent
 from src.train.multi_agent import MultiDQNAgent
 from src.train.network import MaskedNetwork
@@ -45,7 +45,7 @@ def play():
             window.close()
             return True
 
-    env = DraughtsEnvironment()
+    env = GoEnvironment()
 
     tf_env = TFPyEnvironment(env)
 

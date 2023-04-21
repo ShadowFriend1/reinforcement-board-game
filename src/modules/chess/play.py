@@ -34,15 +34,16 @@ def play():
         event, values = window.read()
         # See if user wants to quit or window was closed
         if event == 'Ok':
-            window.close()
-            break
+            try:
+                # Load indicated policy and set it as the policy for an agent
+                saved_policy = tf.saved_model.load(values['-IN-'])
+                window.close()
+                break
+            except IOError:
+                print('Invalid File')
         if event == sg.WINDOW_CLOSED or event == 'Back':
             window.close()
             return True
-        # Output a message to the window
-    print(values['-IN-'])
-
-    saved_policy = tf.saved_model.load(values['-IN-'])
 
     env = ChessEnvironment()
 
@@ -71,6 +72,7 @@ def play():
 
     agent_ai.set_policy(saved_policy)
 
+    # A human agent that can interact with the actual environment
     agent_human = HumanAgent(
         tf_env,
         action_spec=tf_env.action_spec()['position'],
@@ -85,10 +87,13 @@ def play():
     else:
         players = cycle([agent_ai, agent_human])
 
+    # Resets the environment
     ts = tf_env.reset()
 
     reward = None
     player = None
+    # Game loop, uses pygame to render but that actual game and all rules occur in the environment which both agents
+    # act on
     while not ts.is_last():
         board_state = np.squeeze(tf_env.render().numpy())
         board_str = board_state.astype(str)
@@ -115,7 +120,7 @@ def play():
             legal_moves = []
             mask = env.get_legal_moves(board_state, human_player)
             for n in range(len(mask)):
-                if (mask[n] == 1) and (n < 4096):
+                if mask[n] == 1:
                     position_index = n // 64
                     move_index = n % 64
                     position = (position_index // 8, position_index % 8)
@@ -134,4 +139,6 @@ def play():
         else:
             _, reward = player.act()
         ts = tf_env.current_time_step()
+
+    gui.close()
     return True
