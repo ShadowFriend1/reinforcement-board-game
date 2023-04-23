@@ -106,6 +106,8 @@ def play():
         board_str[board_state == 0] = 'e'
         board_str[board_state == 1] = 'wP'
         board_str[board_state == 2] = 'bP'
+        board_str[board_state == 3] = 'wK'
+        board_str[board_state == 4] = 'bK'
         board_str = board_str.tolist()
         gui.Draw(board_str)
 
