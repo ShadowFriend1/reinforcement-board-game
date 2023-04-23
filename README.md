@@ -20,15 +20,15 @@ python main.py
 The application contains several menus
 
 The first menu presented is the main menu: \
-![Main Menu](examples\main_menu.png) \
+![Main Menu](examples/main_menu.png) \
 Play against the AI allows you to choose an existing game to play or a new environment to import. \
-![Play AI](examples\play_ai.png) \
+![Play AI](examples/play_ai.png) \
 All prebuilt environments use the following GUI to choose the model and player clicking "Ok" will start the game and begin rendering the environment. \
-![Play Game](examples\game_play.png) \
+![Play Game](examples/game_play.png) \
 Train Model allows users to train models to play a given environment, you can either train a model on a prebuilt environment or a new one. \
-![Train Model](examples\train_model.png) \
+![Train Model](examples/train_model.png) \
 To train a model several parameters need to be specified which can be done in the following GUi, it should be noted that the training process is limited largely to the console and will take a long time. \
-![Parameters](examples\train_model_spec.png) \
+![Parameters](examples/train_model_spec.png) \
 Training a model in a folder which already contains a model will overwrite it.
 
 Chess, Draughts and Tic Tac Toe currently use pygame for rendering and moves can be selected on the screen, Go uses the console and moves are selected using console input
