@@ -22,7 +22,7 @@ def play():
               [sg.Radio('Player 1', 'RADIO1', default=True, key="-PLAYER1-")],
               [sg.Radio('Player 2', 'RADIO1', default=False)],
               [sg.Text('Choose a model to play against: ')],
-              [sg.Text('Import an Environment: '), sg.Input(),
+              [sg.Text('Import a Model: '), sg.Input(),
                sg.FolderBrowse(initial_folder=os.path.join('..', 'models', 'chess', 'saved'), key='-IN-')],
               [sg.Text('Note, playing against a player 1 AI as player 1 or vice versa may cause issues')],
               [sg.Button('Ok'), sg.Button('Back')]]

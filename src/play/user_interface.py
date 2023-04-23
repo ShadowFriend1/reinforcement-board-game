@@ -20,7 +20,7 @@ def play_gui():
               [sg.Text('Import an Environment: '), sg.Input(),
                sg.FileBrowse(initial_folder=os.path.join('..', 'modules'), file_types=(("Python Files", "*.py"),),
                              key='-IN-')],
-              [sg.Button('Ok'), sg.Button('Quit')]]
+              [sg.Button('Ok'), sg.Button('Back')]]
 
     # Create the window
     window = sg.Window('Play Against AI', layout)
@@ -30,7 +30,7 @@ def play_gui():
         # See if user wants to quit or window was closed
         if event in ['TicTacToe', 'Draughts', 'Chess', 'Go', 'Ok']:
             window.hide()
-        if event == sg.WINDOW_CLOSED or event == 'Quit':
+        if event == sg.WINDOW_CLOSED or event == 'Back':
             window.close()
             break
 
