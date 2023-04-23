@@ -38,7 +38,6 @@ class HumanAgent:
         return observation
 
     def _augment_time_step(self, time_step: TimeStep) -> TimeStep:
-
         reward = self._reward_fn(time_step)
         reward = tf.convert_to_tensor(reward, dtype=tf.float32)
         if reward.shape != time_step.reward.shape:

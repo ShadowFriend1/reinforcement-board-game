@@ -2,13 +2,17 @@ import os.path
 from functools import partial
 from itertools import cycle
 
-import tensorflow as tf
+import PySimpleGUI as sg
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import tensorflow as tf
 from IPython.display import clear_output
+from tf_agents.environments.tf_py_environment import TFPyEnvironment
 from tf_agents.policies import policy_saver
+from tf_agents.trajectories.time_step import TimeStep
+from tf_agents.utils import common
 
 from src.modules.chess.chess_environment import ChessEnvironment
 from src.modules.draughts.draughts_environment import DraughtsEnvironment
@@ -16,13 +20,7 @@ from src.modules.env_flags import REWARD_WIN, REWARD_ILLEGAL_MOVE, REWARD_NOT_PA
 from src.modules.go.go_environment import GoEnvironment
 from src.modules.tic_tac_toe.tic_tac_toe_multi import TicTacToeMultiAgentEnv
 from src.train.multi_agent import MultiDQNAgent
-
-from tf_agents.environments.tf_py_environment import TFPyEnvironment
-from tf_agents.trajectories.time_step import TimeStep
-from tf_agents.utils import common
-
 from src.train.network import MaskedNetwork
-import PySimpleGUI as sg
 
 sns.set()
 
@@ -177,6 +175,7 @@ plot_interval = 1000
 iteration = 1
 games = []
 loss_infos = []
+
 
 # Trains a model according to values specified in the gui
 def train_model(

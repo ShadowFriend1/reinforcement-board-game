@@ -1,7 +1,5 @@
 from typing import Callable
 
-import numpy as np
-
 import tensorflow as tf
 from numpy import ndarray
 from tf_agents.agents import DqnAgent

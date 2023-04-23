@@ -2,7 +2,6 @@ import copy
 from typing import Text, Optional
 
 import numpy as np
-
 from tf_agents.environments import py_environment
 from tf_agents.specs import BoundedArraySpec
 from tf_agents.trajectories.time_step import StepType
@@ -59,6 +58,7 @@ class ChessEnvironment(py_environment.PyEnvironment):
         # Stores whether pieces have moved (to check for castling)
         self._moved = []
 
+    # returns the specification of the environments action space
     def action_spec(self):
         position_spec = BoundedArraySpec((), np.int32, minimum=0, maximum=4097)
         value_spec = BoundedArraySpec((), np.int32, minimum=1, maximum=2)
@@ -67,6 +67,7 @@ class ChessEnvironment(py_environment.PyEnvironment):
             'value': value_spec
         }
 
+    # returns the specification of the environments observation space
     def observation_spec(self):
         state_spec = BoundedArraySpec((8, 8), np.int32, minimum=0, maximum=12)
         mask_spec = BoundedArraySpec((4098,), np.int32, minimum=0, maximum=1)
@@ -75,6 +76,7 @@ class ChessEnvironment(py_environment.PyEnvironment):
             'mask': mask_spec
         }
 
+    # resets the environment
     def _reset(self):
         self._states = np.asarray([[self.ROOK_B, self.KNIGHT_B, self.BISHOP_B, self.QUEEN_B, self.KING_B,
                                     self.BISHOP_B, self.KNIGHT_B, self.ROOK_B],
@@ -96,6 +98,7 @@ class ChessEnvironment(py_environment.PyEnvironment):
         return TimeStep(StepType.FIRST, np.asarray(0.0, dtype=np.float32),
                         self._discount, observation)
 
+    # checks that the move is from a controlled piece and doesn't move to a controlled piece
     def check_legal_tiles(self, state, position, move, player):
         if ((player == 1) and (state[position] in self.PIECES_W)) and (state[move] not in self.PIECES_W):
             return True
@@ -104,6 +107,7 @@ class ChessEnvironment(py_environment.PyEnvironment):
         else:
             return False
 
+    # castles for the player, 0=left, 1=right for left_right
     def castle(self, state, left_right, player):
         next_state = np.copy(state)
         if player == 1:
@@ -122,6 +126,7 @@ class ChessEnvironment(py_environment.PyEnvironment):
             next_state[(row, 7)] = 0
         return next_state
 
+    # moves the players piece
     def move(self, state, position, move, player):
         next_state = np.copy(state)
         if ((next_state[position] in [self.PAWN_W, self.PAWN_B]) and (move[1] == self._double_move)) and \
@@ -135,6 +140,7 @@ class ChessEnvironment(py_environment.PyEnvironment):
             next_state[position] = 0
         return next_state
 
+    # checks whether castling is legal for the player
     def check_legal_castle(self, state, left_right, player):
         if self._check == player:
             return False
@@ -157,6 +163,7 @@ class ChessEnvironment(py_environment.PyEnvironment):
                 return True
         return False
 
+    # checks whether a non-castle move is legal
     def check_legal_move(self, state, position, move, player):
         # Checks to see if the piece being moved belongs to the player and isnt moving onto one of their pieces
         if self.check_legal_tiles(state, position, move, player):
@@ -168,7 +175,7 @@ class ChessEnvironment(py_environment.PyEnvironment):
                             if move[0] == (position[0] - 1):
                                 return True
                             if ((move[0] == (position[0] - 2)) and (position[0] == 6)) and \
-                                    (state[(move[0]+1, move[1])] == 0):
+                                    (state[(move[0] + 1, move[1])] == 0):
                                 return True
                         elif (position[1] - self._double_move in [1, -1]) and (move[1] == self._double_move):
                             if (move[0] == (position[0] + 1)) and \
@@ -287,7 +294,7 @@ class ChessEnvironment(py_environment.PyEnvironment):
                             if move[0] == (position[0] + 1):
                                 return True
                             if ((move[0] == (position[0] + 2)) and (position[0] == 1)) and \
-                                    (state[(move[0]-1, move[1])] == 0):
+                                    (state[(move[0] - 1, move[1])] == 0):
                                 return True
                         elif (position[1] - self._double_move in [1, -1]) and (move[1] == self._double_move):
                             if (move[0] == (position[0] + 1)) and \
@@ -301,6 +308,7 @@ class ChessEnvironment(py_environment.PyEnvironment):
                     return False
         return False
 
+    # checks whether a player hes checked the opponent
     def check_check(self, state, player, no_castle=False):
         if player == 1:
             other_player = 2
@@ -317,6 +325,7 @@ class ChessEnvironment(py_environment.PyEnvironment):
                     return True
         return False
 
+    # checks whether the current move is legal and won't result in a check
     def check_legal(self, state, position, move, player, check_check=True):
         if 8 in [position[0], position[1], move[0], move[1]]:
             return False
@@ -328,17 +337,21 @@ class ChessEnvironment(py_environment.PyEnvironment):
                 return True
         return False
 
+    # gets the state
     def get_state(self) -> TimeStep:
         # Returning an unmodifiable copy of the state.
         return copy.deepcopy(self._current_time_step)
 
+    # gets the state
     def set_state(self, time_step: TimeStep):
         self._current_time_step = time_step
         self._states = time_step.observation
 
+    # sets a position to a value
     def set_position(self, position, value):
         self._states[position] = value
 
+    # gets all legal moves for the player
     def get_legal_moves(self, state, player, check_check=True, no_castle=False):
         legal_flat = np.zeros((4098,), np.int32)
         if not no_castle:
@@ -369,6 +382,7 @@ class ChessEnvironment(py_environment.PyEnvironment):
                             legal_flat[((position_flat * 64) + move_flat)] = 1
         return legal_flat
 
+    # steps the environment, updating the mask and board state
     def _step(self, action: np.ndarray):
         if self._current_time_step.is_last():
             return self._reset()
@@ -450,6 +464,7 @@ class ChessEnvironment(py_environment.PyEnvironment):
         else:
             return TimeStep(step_type, reward, self._discount, observation)
 
+    # checks whether the game has ended and who won
     def _check_states(self, player: int):
         """Check if the given states are final and calculate reward.
 
@@ -525,5 +540,6 @@ class ChessEnvironment(py_environment.PyEnvironment):
         table_str = table_str.replace('9', 'BB')
         print(table_str)
 
+    # returns th board state to be used for rendering the environment
     def render(self, mode: Text = 'rgb_array') -> Optional[types.NestedArray]:
         return np.copy(self._states)

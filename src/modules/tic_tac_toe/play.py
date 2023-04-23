@@ -1,18 +1,16 @@
 import os
+import time
 from functools import partial
 from itertools import cycle
-import time
 
 import PySimpleGUI as sg
 import numpy as np
 import pygame as pg
-from pygame.locals import *
 import tensorflow as tf
+from pygame.locals import *
 from tf_agents.environments import TFPyEnvironment
 
-from src.modules.draughts.draughtsGUI_pygame import DraughtsGUI_pygame
-from src.modules.env_flags import REWARD_NOT_PASSED, REWARD_ILLEGAL_MOVE, REWARD_WIN, REWARD_LOSS, \
-    REWARD_DRAW_OR_NOT_FINAL
+from src.modules.env_flags import REWARD_NOT_PASSED, REWARD_ILLEGAL_MOVE, REWARD_DRAW_OR_NOT_FINAL
 from src.modules.tic_tac_toe.tic_tac_toe_multi import TicTacToeMultiAgentEnv
 from src.play.human_agent import HumanAgent
 from src.train.multi_agent import MultiDQNAgent
@@ -24,6 +22,7 @@ game_initiating_window, draw_status, drawXO and user_click functions adapted fro
 https://www.geeksforgeeks.org/tic-tac-toe-gui-in-python-using-pygame/
 """
 draw = None
+
 
 def game_initiating_window(screen, initiating_window, width, height, winner):
     # displaying over the screen
@@ -78,8 +77,8 @@ def draw_status(winner, screen, width, player, draw):
     screen.blit(text, text_rect)
     pg.display.update()
 
-def drawXO(row, col, width, height, screen, x_img, o_img, player):
 
+def drawXO(row, col, width, height, screen, x_img, o_img, player):
     # for the first row, the image
     # should be pasted at a x coordinate
     # of 30 from the left margin
@@ -153,7 +152,9 @@ def user_click(width, height, board):
     if row and col and board[row - 1][col - 1] is None:
         return row - 1, col - 1
 
+# Plays against the AI
 def play():
+    # Creates the first window where the user chooses the model to play against and whether to play first or second
     layout = [[sg.Text('Choose whether to play 1st or 2nd')],
               [sg.Radio('Player 1', 'RADIO1', default=True, key="-PLAYER1-")],
               [sg.Radio('Player 2', 'RADIO1', default=False)],
@@ -182,6 +183,7 @@ def play():
             window.close()
             return True
 
+    # creates the environment and human and model agents which will interact with it
     env = TicTacToeMultiAgentEnv()
 
     tf_env = TFPyEnvironment(env)
@@ -193,6 +195,7 @@ def play():
         ai_player = 1
         human_player = 2
 
+    # temporary q_net instantiated to create basic policy for agent to be replaced
     temp_q_net = MaskedNetwork(
         action_spec=tf_env.action_spec()['position'],
         observation_spec=tf_env.observation_spec(),
@@ -207,8 +210,10 @@ def play():
         q_network=temp_q_net
     )
 
+    # sets the models policy to the loaded policy
     agent_ai.set_policy(saved_policy)
 
+    # A human agent that can interact with the actual environment
     agent_human = HumanAgent(
         tf_env,
         action_spec=tf_env.action_spec()['position'],
@@ -216,11 +221,13 @@ def play():
         name='PlayerHuman'
     )
 
+    # loops the player agents using a cycle iterator
     if human_player == 1:
         players = cycle([agent_human, agent_ai])
     else:
         players = cycle([agent_ai, agent_human])
 
+    # Resets the environment
     ts = tf_env.reset()
 
     # sets up a display window with pygame and renders the board state
@@ -249,11 +256,14 @@ def play():
     global draw
     draw = None
 
+    # renders the initial board state
     game_initiating_window(screen, initiating_window, width, height, winner)
 
     reward = None
     player = None
     current_player = 1
+    # Game loop, uses pygame to render but that actual game and all rules occur in the environment which both agents
+    # act on
     while not ts.is_last():
         draw_status(None, screen, width, current_player, False)
 

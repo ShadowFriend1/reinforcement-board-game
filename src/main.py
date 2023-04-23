@@ -1,8 +1,8 @@
-import os
-
 import PySimpleGUI as sg
-from train.user_interface import train_gui
+
 from play.user_interface import play_gui
+from train.user_interface import train_gui
+
 
 def app_gui():
     layout = [[sg.Text("Test or Train an AI model")],

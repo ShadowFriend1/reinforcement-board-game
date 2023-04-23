@@ -11,6 +11,7 @@ def import_name(module_name, name):
         return None
     return vars(module)[name]
 
+
 def play_gui():
     layout = [[sg.Text("Choose A Game Environment")],
               [sg.Text("Prebuilt Environments:")],

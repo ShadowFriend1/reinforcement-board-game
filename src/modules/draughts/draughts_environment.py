@@ -2,7 +2,6 @@ import copy
 from typing import Optional, Text
 
 import numpy as np
-
 from tf_agents.environments import py_environment
 from tf_agents.specs import BoundedArraySpec
 from tf_agents.trajectories.time_step import StepType
@@ -30,6 +29,7 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
         self._num_moves = 0
         self._max_moves = 200
 
+    # returns the specification of the environments action space
     def action_spec(self):
         position_spec = BoundedArraySpec((), np.int32, minimum=0, maximum=4095)
         value_spec = BoundedArraySpec((), np.int32, minimum=1, maximum=2)
@@ -38,6 +38,7 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
             'value': value_spec
         }
 
+    # returns the specification of the environments observation space
     def observation_spec(self):
         state_spec = BoundedArraySpec((8, 8), np.int32, minimum=0, maximum=4)
         mask_spec = BoundedArraySpec((4096,), np.int32, minimum=0, maximum=1)
@@ -46,6 +47,7 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
             'mask': mask_spec
         }
 
+    # resets the environment
     def _reset(self):
         self._states = np.asarray([[0, 2, 0, 2, 0, 2, 0, 2],
                                    [2, 0, 2, 0, 2, 0, 2, 0],
@@ -61,12 +63,14 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
         return TimeStep(StepType.FIRST, np.asarray(0.0, dtype=np.float32),
                         self._discount, observation)
 
+    # checks that the move is from and to an empty position
     def check_legal_tiles(self, state, position, move, player):
         if (state[position] == player) or (state[position] == player + 2):
             if state[move] == 0:
                 return True
         return False
 
+    # checks that the move is a legal standard move (1 space)
     def check_legal_common(self, state, position, move, player):
         if self.check_legal_tiles(state, position, move, player):
             y_dif = move[0] - position[0]
@@ -80,6 +84,7 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
                     return True
         return False
 
+    # checks that the move is a legal take (2 spaces over an enemy)
     def check_legal_take(self, state, position, move, player):
         if self.check_legal_tiles(state, position, move, player):
             y_dif = move[0] - position[0]
@@ -100,6 +105,7 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
                             return True, middle
         return False, None
 
+    # checks whether any additional takes are possible on the board
     def check_extra_takes(self, state, position, player):
         x_dif = [-2, 2]
         if state[position] != player:
@@ -117,14 +123,17 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
                         return True, None
         return False, None
 
+    # gets the state
     def get_state(self) -> TimeStep:
         # Returning an unmodifiable copy of the state.
         return copy.deepcopy(self._current_time_step)
 
+    # sets the state
     def set_state(self, time_step: TimeStep):
         self._current_time_step = time_step
         self._states = time_step.observation
 
+    # gets all legal moves for the player (player must take if possible)
     def get_legal_moves(self, state, player):
         legal_flat = np.zeros((4096,), np.int32)
         # Loop through each position on the board checking for legal normal moves
@@ -164,6 +173,7 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
                                 legal_flat[(position_flat * 64) + move_flat] = 1
         return legal_flat
 
+    # steps the environment, changing next player if necessary and updating the mask and board state
     def _step(self, action: np.ndarray):
         if self._current_time_step.is_last():
             return self._reset()
@@ -234,6 +244,7 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
         else:
             return TimeStep(step_type, reward, self._discount, observation)
 
+    # checks if the game is ended or ongoing
     def _check_states(self, states: np.ndarray, extra_take: bool, player: int):
         """Check if the given states are final and calculate reward.
 
@@ -280,5 +291,6 @@ class DraughtsEnvironment(py_environment.PyEnvironment):
         '''.format(*tuple(self.get_state().observation['state'].flatten()))
         print(table_str)
 
+    # returns a copy of the board state for use in rendering the environment
     def render(self, mode: Text = 'rgb_array') -> Optional[types.NestedArray]:
         return np.copy(self._states)

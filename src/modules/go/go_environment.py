@@ -2,7 +2,6 @@ import copy
 from typing import Text, Optional
 
 import numpy as np
-
 from tf_agents.environments import py_environment
 from tf_agents.specs import BoundedArraySpec
 from tf_agents.trajectories.time_step import StepType
@@ -34,6 +33,7 @@ class GoEnvironment(py_environment.PyEnvironment):
         self._killed_white = 0
         self._killed_black = 0
 
+    # returns the specification of the environments action space
     def action_spec(self):
         position_spec = BoundedArraySpec((), np.int32, minimum=0, maximum=361)
         value_spec = BoundedArraySpec((), np.int32, minimum=1, maximum=2)
@@ -42,6 +42,7 @@ class GoEnvironment(py_environment.PyEnvironment):
             'value': value_spec
         }
 
+    # returns the specification of the environments observation space
     def observation_spec(self):
         state_spec = BoundedArraySpec((19, 19), np.int32, minimum=0, maximum=2)
         mask_spec = BoundedArraySpec((362,), np.int32, minimum=0, maximum=1)
@@ -50,6 +51,7 @@ class GoEnvironment(py_environment.PyEnvironment):
             'mask': mask_spec
         }
 
+    # resets the environment
     def _reset(self):
         self._states = np.zeros((19, 19), np.int32)
         self._mask = self.get_legal_moves(self._states, 1)
@@ -58,25 +60,30 @@ class GoEnvironment(py_environment.PyEnvironment):
         return TimeStep(StepType.FIRST, np.asarray(0.0, dtype=np.float32),
                         self._discount, observation)
 
+    # checks whether the placement position is empty
     def check_legal_tiles(self, state, position, player):
         if state[position] == 0:
             return True
         return False
 
+    # Checks whether the piece can be placed in a location
     def check_legal_place(self, state, position, player):
         # Checks for legal placement (empty space)
         if self.check_legal_tiles(state, position, player):
             return True
         return False
 
+    # Gets the environment state
     def get_state(self) -> TimeStep:
         # Returning an unmodifiable copy of the state.
         return copy.deepcopy(self._current_time_step)
 
+    # Sets the environment state
     def set_state(self, time_step: TimeStep):
         self._current_time_step = time_step
         self._states = time_step.observation
 
+    # returns a mask with all legal moves for the player
     def get_legal_moves(self, state, player):
         legal_flat = np.zeros((362,), np.int32)
         # Players can always pass
@@ -152,6 +159,7 @@ class GoEnvironment(py_environment.PyEnvironment):
                         return True
         return False
 
+    # Gets all values that are adjacent to a position (used to determine whether pieces are surrounded)
     def get_adj_values(self, state, position):
         adjacent = []
         x_dif = [1, -1]
@@ -263,6 +271,7 @@ class GoEnvironment(py_environment.PyEnvironment):
         return next_state, killed
 
     def get_score(self, state):
+        # Gets the final score for the game and returns it
         end_state = np.copy(state)
         score_white = 0
         score_black = 0

@@ -1,12 +1,11 @@
 from typing import Text, Optional
 
 import numpy as np
+from tf_agents.specs import BoundedArraySpec
+from tf_agents.trajectories.time_step import StepType, TimeStep
 from tf_agents.typing import types
 
 from .tic_tac_toe_environment import TicTacToeEnvironment
-from tf_agents.specs import BoundedArraySpec
-from tf_agents.trajectories.time_step import StepType, TimeStep
-
 from ..env_flags import REWARD_ILLEGAL_MOVE
 
 

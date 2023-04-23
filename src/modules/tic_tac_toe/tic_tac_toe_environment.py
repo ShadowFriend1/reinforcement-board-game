@@ -17,8 +17,8 @@
 """A state-settable environment for Tic-Tac-Toe game."""
 
 import copy
-import numpy as np
 
+import numpy as np
 from tf_agents.environments import py_environment
 from tf_agents.specs import BoundedArraySpec
 from tf_agents.trajectories.time_step import StepType
@@ -117,6 +117,7 @@ class TicTacToeEnvironment(py_environment.PyEnvironment):
 
         return TimeStep(step_type, reward, self._discount, self._states)
 
+    # checks whether the game is ended or ongoing
     def _check_states(self, states: np.ndarray):
         """Check if the given states are final and calculate reward.
 

@@ -15,8 +15,9 @@ from src.train.multi_agent import MultiDQNAgent
 from src.train.network import MaskedNetwork
 from src.train.train_py_env import action_fn
 
-
+# Plays against the AI
 def play():
+    # Creates the first window where the user chooses the model to play against and whether to play first or second
     layout = [[sg.Text('Choose whether to play 1st or 2nd')],
               [sg.Radio('Player 1', 'RADIO1', default=True, key="-PLAYER1-")],
               [sg.Radio('Player 2', 'RADIO1', default=False)],
@@ -45,6 +46,7 @@ def play():
             window.close()
             return True
 
+    # creates the environment and human and model agents which will interact with it
     env = DraughtsEnvironment()
 
     tf_env = TFPyEnvironment(env)
@@ -56,6 +58,7 @@ def play():
         ai_player = 1
         human_player = 2
 
+    # temporary q_net instantiated to create basic policy for agent to be replaced
     temp_q_net = MaskedNetwork(
         action_spec=tf_env.action_spec()['position'],
         observation_spec=tf_env.observation_spec(),
@@ -70,8 +73,10 @@ def play():
         q_network=temp_q_net
     )
 
+    # sets the models policy to the loaded policy
     agent_ai.set_policy(saved_policy)
 
+    # A human agent that can interact with the actual environment
     agent_human = HumanAgent(
         tf_env,
         action_spec=tf_env.action_spec()['position'],
@@ -79,17 +84,22 @@ def play():
         name='PlayerHuman'
     )
 
+    # creates a pygame GUI for the game that will handle rendering
     gui = DraughtsGUI_pygame(image_dir=os.path.join('.', 'modules', 'draughts', 'images'))
 
+    # loops the player agents using a cycle iterator
     if human_player == 1:
         players = cycle([agent_human, agent_ai])
     else:
         players = cycle([agent_ai, agent_human])
 
+    # Resets the environment
     ts = tf_env.reset()
 
     reward = None
     player = None
+    # Game loop, uses pygame to render but that actual game and all rules occur in the environment which both agents
+    # act on
     while not ts.is_last():
         board_state = np.squeeze(tf_env.render().numpy())
         board_str = board_state.astype(str)
