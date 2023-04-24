@@ -2,7 +2,6 @@ import os.path
 from functools import partial
 from itertools import cycle
 
-import PySimpleGUI as sg
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -42,9 +41,9 @@ def training_episode(tf_env, player_1, player_2):
     return time_steps
 
 
-def collect_training_data(env, player_1, player_2):
+def collect_training_data(tf_env, episodes_per_iteration, player_1, player_2, games, iteration):
     for game in range(episodes_per_iteration):
-        training_episode(env, player_1, player_2)
+        training_episode(tf_env, player_1, player_2)
 
         p1_return = player_1.episode_return()
         p2_return = player_2.episode_return()
@@ -66,10 +65,10 @@ def collect_training_data(env, player_1, player_2):
         })
 
 
-def train(player1, player2):
+def train(train_steps_per_iteration, player_1, player_2, loss_infos, iteration):
     for _ in range(train_steps_per_iteration):
-        p1_train_info = player1.train_iteration()
-        p2_train_info = player2.train_iteration()
+        p1_train_info = player_1.train_iteration()
+        p2_train_info = player_2.train_iteration()
 
         loss_infos.append({
             'iteration': iteration,
@@ -88,7 +87,7 @@ def observation_and_action_constraint_splitter(observation):
 
 
 # Plots the training history for both players
-def plot_history():
+def plot_history(games, loss_infos, iteration, data_title):
     games_data = pd.DataFrame.from_records(games)
     loss_data = pd.DataFrame.from_records(loss_infos)
     loss_data['Player 1'] = np.log(loss_data.p1_loss)
@@ -163,20 +162,6 @@ def p2_reward_fn(ts: TimeStep) -> float:
     return ts.reward
 
 
-num_iterations = 4000
-initial_collect_episodes = 5
-episodes_per_iteration = 5
-train_steps_per_iteration = 1
-training_batch_size = 512
-training_num_steps = 2
-replay_buffer_size = 5 * episodes_per_iteration * 4098
-plot_interval = 1000
-
-iteration = 1
-games = []
-loss_infos = []
-
-
 # Trains a model according to values specified in the gui
 def train_model(
         env_class,
@@ -194,14 +179,6 @@ def train_model(
         decay_step_par=400,
         decay_rate_par=0.9
 ):
-    global num_iterations
-    global initial_collect_episodes
-    global episodes_per_iteration
-    global train_steps_per_iteration
-    global training_batch_size
-    global training_num_steps
-    global replay_buffer_size
-    global plot_interval
     num_iterations = num_iterations_par
     initial_collect_episodes = initial_collect_episodes_par
     episodes_per_iteration = episodes_per_iteration_par
@@ -210,9 +187,6 @@ def train_model(
     training_num_steps = training_num_steps_par
     plot_interval = plot_interval_par
 
-    global iteration
-    global games
-    global loss_infos
     iteration = 1
     games = []
     loss_infos = []
@@ -240,21 +214,18 @@ def train_model(
 
     env = env_class()
 
-    tf_env = TFPyEnvironment(env)
-
     save_dir = save_dir
 
     policy_dir = os.path.join(save_dir, 'saved')
     checkpoint_dir = os.path.join(save_dir, 'checkpoint')
 
-    global data_title
     data_title = 'Model Training'
 
     replay_buffer_size = replay_buffer_size_par
 
-    tf_env.action_spec()
-
     # creates agents to operate on the environment (creates 2 agents, one for player 1 and 1 for player 2)
+
+    tf_env = TFPyEnvironment(env)
 
     player_1_q_network = MaskedNetwork(
         action_spec=tf_env.action_spec()['position'],
@@ -297,8 +268,6 @@ def train_model(
     )
     player_2.initialize()
 
-    # Saves the models policy
-
     policy_checkpointer_1 = common.Checkpointer(ckpt_dir=os.path.join(checkpoint_dir, 'player_1'),
                                                 policy=player_1.policy)
 
@@ -309,39 +278,25 @@ def train_model(
 
     policy_saver_2 = policy_saver.PolicySaver(player_2.policy)
 
-    # Progress bar currently doesn't work
-    train_layout = [[sg.Button('Start Training Model')],
-                    [sg.ProgressBar(num_iterations, orientation='h', key='-PBAR-')],
-                    [sg.InputText(default_text='Training Ready...', size=(40, 1), key='-OUTPUT-', readonly=True)]]
-
-    train_window = sg.Window('Training Model', train_layout)
-
-    while True:
-        event, values = train_window.read()
-        if event == 'Start Training Model':
-            break
-
     print('Collecting Initial Training Sample...')
     for _ in range(initial_collect_episodes):
         training_episode(tf_env, player_1, player_2)
     print('Samples collected')
 
-    # runs iterations each of which consist of episode number of game in which the 2 agents play each other
     if iteration > 1:
-        plot_history()
+        plot_history(games, loss_infos, iteration, data_title)
         clear_output(wait=True)
     while iteration < num_iterations:
-        collect_training_data(tf_env, player_1, player_2)
-        train(player_1, player_2)
+        collect_training_data(tf_env, episodes_per_iteration, player_1, player_2, games, iteration)
+        train(train_steps_per_iteration, player_1, player_2, loss_infos, iteration)
         print('iteration: ', iteration, ' completed')
         iteration += 1
         if iteration % plot_interval == 0:
-            train_window['-PBAR-'].update(current_count=iteration)
             policy_saver_1.save(os.path.join(policy_dir, 'player_1'))
             policy_saver_2.save(os.path.join(policy_dir, 'player_2'))
             policy_checkpointer_1.save(global_step=tf.convert_to_tensor(iteration))
             policy_checkpointer_2.save(global_step=tf.convert_to_tensor(iteration))
-            plot_history()
+            plot_history(games, loss_infos, iteration, data_title)
             clear_output(wait=True)
 
 
@@ -458,11 +413,11 @@ if __name__ == "__main__":
     print('Samples collected')
 
     if iteration > 1:
-        plot_history()
+        plot_history(games, loss_infos, iteration, data_title)
         clear_output(wait=True)
     while iteration < num_iterations:
-        collect_training_data(tf_env, player_1, player_2)
-        train(player_1, player_2)
+        collect_training_data(tf_env, episodes_per_iteration, player_1, player_2, games, iteration)
+        train(train_steps_per_iteration, player_1, player_2, loss_infos, iteration)
         print('iteration: ', iteration, ' completed')
         iteration += 1
         if iteration % plot_interval == 0:
@@ -470,5 +425,5 @@ if __name__ == "__main__":
             policy_saver_2.save(os.path.join(policy_dir, 'player_2'))
             policy_checkpointer_1.save(global_step=tf.convert_to_tensor(iteration))
             policy_checkpointer_2.save(global_step=tf.convert_to_tensor(iteration))
-            plot_history()
+            plot_history(games, loss_infos, iteration, data_title)
             clear_output(wait=True)

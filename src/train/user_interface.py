@@ -2,6 +2,7 @@ import os
 
 import PySimpleGUI as sg
 
+from src.modules.tic_tac_toe.tic_tac_toe_multi import TicTacToeMultiAgentEnv
 from src.play.user_interface import import_name
 from src.train.train_py_env import train_model
 
@@ -47,13 +48,13 @@ def train_gui():
                           [sg.Text('Replay Buffer suggested size (Usually a bit bigger for safety):')],
                           [sg.Text('different_pieces * episodes_per_iteration * action_spec_length')],
                           [sg.Text('Number of Iterations: '), sg.Input(key='-NUM_ITER-', default_text=4000)],
-                          [sg.Text('Initial Collect Episodes: '), sg.Input(key='-COLLECT-', default_text=4000)],
+                          [sg.Text('Initial Collect Episodes: '), sg.Input(key='-COLLECT-', default_text=5)],
                           [sg.Text('Episodes Per Iteration: '), sg.Input(key='-EPI_ITER-', default_text=5)],
                           [sg.Text('Train Steps Per Iteration: '), sg.Input(key='-TRA_ITER-', default_text=1)],
                           [sg.Text('Training Batch Size: '), sg.Input(key='-TRA_BATCH-', default_text=512)],
                           [sg.Text('Number of Training Steps: '), sg.Input(key='-TRA_STEP-', default_text=2)],
                           [sg.Text('Interval Between Plots: '), sg.Input(key='-PLT_INTER-', default_text=100)],
-                          [sg.Text('Learning Rate: '), sg.Input(key='-RATE-', default_text=1e-5)],
+                          [sg.Text('Learning Rate: '), sg.Input(key='-RATE-', default_text=0.00001)],
                           [sg.Checkbox('Learning rate decay: ', default=False, key='-DEC-')],
                           [sg.Text('Only matters if learning rate is decaying: ')],
                           [sg.Text('Decay Step: '), sg.Input(key='-DEC_STEP-', default_text=400)],
@@ -77,11 +78,10 @@ def train_gui():
                         training_batch_size = int(new_values['-TRA_BATCH-'])
                         training_num_steps = int(new_values['-TRA_STEP-'])
                         plot_interval = int(new_values['-PLT_INTER-'])
-                        learning_rate = format(float(new_values['-RATE-']))
-                        print(learning_rate)
+                        learning_rate = float(new_values['-RATE-'])
                         learn_exp_decay = new_values['-DEC-']
                         decay_step = int(new_values['-DEC_STEP-'])
-                        decay_rate = format(float(new_values['-DEC_RATE-']))
+                        decay_rate = float(new_values['-DEC_RATE-'])
 
                         new_window.close()
 
