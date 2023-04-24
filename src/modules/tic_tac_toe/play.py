@@ -303,7 +303,6 @@ def play():
                     if event.type == MOUSEBUTTONDOWN:
                         move = user_click(width, height, board_str)
                         if move is not None:
-                            print(move)
                             move_flat = (move[0] * 3) + move[1]
                             human_action = tf.convert_to_tensor(move_flat)
                             moved = True
