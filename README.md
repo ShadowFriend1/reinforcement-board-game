@@ -105,3 +105,4 @@ Draughts Replay Buffer: 6 * episodes_per_iteration * 4096 = 122880
 Go Replay Buffer: 4 * episodes_per_iteration * 361 = 7220
 Tic Tac Toe Replay Buffer: 4 * episodes_per_iteration * 10 = 200
 ```
+The current Chess and Go models only completed 2000 and 1000 iterations respectively (and this took multiple days) due to the complexity of the game engine due to having to check for illegal moves and check.
