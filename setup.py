@@ -9,7 +9,11 @@ try:
         long_description = f.read()
 except Exception:
     long_description = ''
+
 setup(
+    # Console
+    console=['src/main.py'],
+
     # Project name:
     name='reinforcement-board-game',
 
