@@ -65,8 +65,8 @@ This project has the following folder structure:
 │   │   ├── tic_tac_toe                    # Noughts and Crosses environment
 │   │   │   ├── icons                      # Stored images used for rendering
 │   │   │   ├── play.py                    # Handles playing against the trained model
-│   │   │   ├── tic_tac_toe_environment.py # Os and Xs environment without support for multiple agents
-│   │   │   └── tic_tac_toe_multi.py       # Implements multiple agents in Os and Xs environment
+│   │   │   ├── tic_tac_toe_environment.py # Tic Tac Toe environment without support for multiple agents
+│   │   │   └── tic_tac_toe_multi.py       # Implements multiple agents in Tic Tac Toe environment
 │   │   └── env_flags.py                   # Stores all reward flags shared between environments
 │   ├── play                               # Code for playing against the trained models
 │   │   ├── human_agent.py                 # An agent that performs environment actions specified by user input
@@ -82,3 +82,26 @@ This project has the following folder structure:
 └── setup.py                               # Setup file used for package distribution
 ```
 All model folders have the same format and contain data for a model trained for each side of the game
+
+# Pretrained Models
+Pretrained models are included for Chess, Draughts Tic Tac Toe and Go, all of these models are trained using the existing game environments included, all models are trained using the following parameters:
+```
+Number of Iterations: 4000
+Initial Collect Episodes: 5
+Episodes Per Iteration: 5
+Train Steps Per Iteration: 1
+Training Batch Size: 512
+Number of Training Steps: 2
+Interval Between Plots: 1000
+Learning Rate: 1e-5,
+Learning rate decay: True,
+Decay Step: 400,
+Decay Rate: 0.9
+```
+The replay buffer size is different for each game as they have differing observation and action spaces:
+```
+Chess Replay Buffer: 15 * episodes_per_iteration * 4098 = 307350
+Draughts Replay Buffer: 6 * episodes_per_iteration * 4096 = 122880
+Go Replay Buffer: 4 * episodes_per_iteration * 361 = 7220
+Tic Tac Toe Replay Buffer: 4 * episodes_per_iteration * 10 = 200
+```
