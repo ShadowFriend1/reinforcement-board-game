@@ -72,10 +72,10 @@ This project has the following folder structure:
 │   │   ├── human_agent.py                 # An agent that performs environment actions specified by user input
 │   │   └── user_interface.py              # GUI to let user choose an environment to play against
 │   └── train                              # Code for training the models
-│   │   ├── multi_agent.py                 # An agent that give the environment a value used to identify it
-│   │   ├── network.py                     # Contains network specification and masking to remove illegal actions
-│   │   ├── train_py_env.py                # Code for training an model on a specified environment
-│   │   └── user_interface.py              # GUI to let user specify training parameters
+│       ├── multi_agent.py                 # An agent that give the environment a value used to identify it
+│       ├── network.py                     # Contains network specification and masking to remove illegal actions
+│       ├── train_py_env.py                # Code for training an model on a specified environment
+│       └── user_interface.py              # GUI to let user specify training parameters
 ├── LICENSE                                # General Public Use license
 ├── README.md                              # README
 ├── requirements.txt                       # Requirements file used to install python dependencies
