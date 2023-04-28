@@ -43,8 +43,8 @@ This project has the following folder structure:
 │   │   │   │   ├── player_1               # Player 1 files
 │   │   │   │   └── player_2               # Player 2 files
 │   │   │   └── saved                      # Saved policy location ro restore for playing
-│   │   │   │   ├── player_1               # Player 1 files
-│   │   │   │   └── player_2               # Player 2 files
+│   │   │       ├── player_1               # Player 1 files
+│   │   │       └── player_2               # Player 2 files
 │   │   ├── draughts                       # Draughts models
 │   │   ├── go                             # Go models
 │   │   └── tic_tac_toe                    # Noughts and Crosses models
